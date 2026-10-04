@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overrides of upstream strings (src/main/res/values/strings.xml) that mention KDE.
+  Wording avoids the app name where possible, so renaming only needs branding.xml.
+  When merging upstream: grep the new strings.xml for "KDE" and add overrides here.
+-->
+<resources>
+    <string name="kde_connect">@string/app_name</string>
+    <string name="pairing_title">Devices</string>
+    <string name="pairing_description">Your computers on the same network should appear here.</string>
+
+    <string name="no_permissions_remotekeyboard_ime">To receive keypresses you need to activate the Remote Keyboard as an Android input method</string>
+    <string name="remotekeyboard_not_connected">There is no active remote keyboard connection, establish one from your computer</string>
+    <string name="remote_keyboard_service">Remote Keyboard</string>
+    <string name="mpris_notification_settings_summary">Allow controlling your media players without opening the app</string>
+    <string name="sftp_manage_storage_permission_explanation">To allow remote access to files on this device you need to allow this app to manage the storage.</string>
+    <string name="pref_plugin_telepathy_mms_desc">To be able to send MMS from this app you need to set it as the default SMS app.</string>
+    <string name="contacts_per_device_confirmation">Your phone contacts will be copied over to this device, so they can be used by its messaging app and other apps.</string>
+    <string name="addcommand_explanation2">You can add new commands in the app on your computer</string>
+    <string name="settings_export_logs">Export logs</string>
+    <string name="bluetooth_permission_needed_desc">This app needs permission to connect to nearby devices to make devices paired using Bluetooth available.</string>
+    <string name="location_permission_needed_desc">This app needs the background location permission to know the WiFi network you are connected to even when the app is in the background. Android requires this because the names of WiFi networks around you could be used to find your location, even though this app does not do that.</string>
+    <string name="pref_plugin_bigscreen_desc">Use your device as a remote for a TV</string>
+
+    <string name="addcommand_explanation">Commands you add on your computer show up here. Tap one to run it on the computer.</string>
+    <string name="add_command_description">Add the command in the app on your computer. It shows up here once saved.</string>
+
+    <!-- Sentence case, like the rest of our UI. -->
+    <string name="notification_channel_persistent">Connection status</string>
+    <string name="foreground_notification_send_clipboard">Send clipboard</string>
+    <string name="custom_devices_settings">Add by IP address</string>
+    <string name="add_device_dialog_title">Add device</string>
+    <string name="custom_device_list_help">If your computer isn\'t found automatically, add its IP address or hostname.</string>
+    <string name="manifest_label_share">Send to</string>
+    <string name="share_to">Send to</string>
+    <string name="runcommand_notreachable">Not connected</string>
+    <string name="enable_bluetooth">Bluetooth</string>
+    <string-array name="theme_list_v28">
+        <item>System default</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+
+    <!-- Only reachable from removed screens, but kept neutral in case upstream reuses them. -->
+    <string name="about_kde">About</string>
+    <string name="kde_be_free" />
+    <string name="kde" />
+    <string name="everyone_else" />
+    <string name="about_kde_about" />
+    <string name="about_kde_report_bugs_or_wishes" />
+    <string name="about_kde_join_kde" />
+    <string name="about_kde_support_kde" />
+</resources>

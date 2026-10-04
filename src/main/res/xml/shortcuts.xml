@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <share-target android:targetClass="ge.connect.share.ShareSheetActivity">
+        <data android:mimeType="*/*" />
+        <category android:name="org.kde.kdeconnect.category.SHARE_TARGET" />
+    </share-target>
+    <!-- ge.connect: long-press shortcuts (see ge.connect.shortcuts.ShortcutActivity) -->
+    <shortcut
+        android:shortcutId="clipboard"
+        android:enabled="true"
+        android:icon="@drawable/sc_clipboard"
+        android:shortcutShortLabel="@string/shortcut_clipboard"
+        android:shortcutLongLabel="@string/shortcut_clipboard_long">
+        <intent
+            android:action="ge.connect.shortcut.CLIPBOARD"
+            android:targetPackage="io.github.vivere_181.janus"
+            android:targetClass="ge.connect.shortcuts.ShortcutActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="send_files"
+        android:enabled="true"
+        android:icon="@drawable/sc_send_files"
+        android:shortcutShortLabel="@string/shortcut_send_files"
+        android:shortcutLongLabel="@string/shortcut_send_files_long">
+        <intent
+            android:action="ge.connect.shortcut.SEND_FILES"
+            android:targetPackage="io.github.vivere_181.janus"
+            android:targetClass="ge.connect.shortcuts.ShortcutActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="touchpad"
+        android:enabled="true"
+        android:icon="@drawable/sc_touchpad"
+        android:shortcutShortLabel="@string/shortcut_touchpad"
+        android:shortcutLongLabel="@string/shortcut_touchpad_long">
+        <intent
+            android:action="ge.connect.shortcut.TOUCHPAD"
+            android:targetPackage="io.github.vivere_181.janus"
+            android:targetClass="ge.connect.shortcuts.ShortcutActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="ping"
+        android:enabled="true"
+        android:icon="@drawable/sc_ping"
+        android:shortcutShortLabel="@string/shortcut_ping"
+        android:shortcutLongLabel="@string/shortcut_ping_long">
+        <intent
+            android:action="ge.connect.shortcut.PING"
+            android:targetPackage="io.github.vivere_181.janus"
+            android:targetClass="ge.connect.shortcuts.ShortcutActivity" />
+    </shortcut>
+</shortcuts>

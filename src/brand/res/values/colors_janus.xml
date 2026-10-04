@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ge.connect: Janus navy colour system, light (generated with ui/theme/JanusColors.kt) -->
+<resources>
+    <color name="janus_primary">#1B4684</color>
+    <color name="janus_on_primary">#FFFFFF</color>
+    <color name="janus_primary_container">#D3E4FF</color>
+    <color name="janus_on_primary_container">#001B3D</color>
+    <color name="janus_inverse_primary">#A8C8FC</color>
+    <color name="janus_secondary">#505F78</color>
+    <color name="janus_on_secondary">#FFFFFF</color>
+    <color name="janus_secondary_container">#D5E3FF</color>
+    <color name="janus_on_secondary_container">#0A1C31</color>
+    <color name="janus_tertiary">#05696F</color>
+    <color name="janus_on_tertiary">#FEFFFF</color>
+    <color name="janus_tertiary_container">#9DF0F6</color>
+    <color name="janus_on_tertiary_container">#012022</color>
+    <color name="janus_background">#F6F9FF</color>
+    <color name="janus_on_background">#191C21</color>
+    <color name="janus_surface">#F6F9FF</color>
+    <color name="janus_on_surface">#191C21</color>
+    <color name="janus_surface_variant">#DAE3F3</color>
+    <color name="janus_on_surface_variant">#3F4754</color>
+    <color name="janus_surface_tint">#1B4684</color>
+    <color name="janus_inverse_surface">#2D3136</color>
+    <color name="janus_inverse_on_surface">#EDF1F8</color>
+    <color name="janus_outline">#6F7886</color>
+    <color name="janus_outline_variant">#BEC7D7</color>
+    <color name="janus_scrim">#000000</color>
+    <color name="janus_surface_bright">#F6F9FF</color>
+    <color name="janus_surface_dim">#D6DAE1</color>
+    <color name="janus_surface_container_lowest">#FFFFFF</color>
+    <color name="janus_surface_container_low">#F0F4FB</color>
+    <color name="janus_surface_container">#EAEEF5</color>
+    <color name="janus_surface_container_high">#E4E8F0</color>
+    <color name="janus_surface_container_highest">#DFE3EA</color>
+    <color name="janus_error">#BA1A1A</color>
+    <color name="janus_on_error">#FFFFFF</color>
+    <color name="janus_error_container">#FFDAD6</color>
+    <color name="janus_on_error_container">#410002</color>
+</resources>

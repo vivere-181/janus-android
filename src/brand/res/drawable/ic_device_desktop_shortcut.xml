@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Replaces upstream's device shortcut icon (the direct-share entry): matches our launcher
+     shortcuts. Laptop for desktops too, since the Mac engine reports MacBooks as desktops. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="960" android:viewportHeight="960">
+    <path android:fillColor="#FF00B4FF" android:pathData="M480,0a480,480 0 1,1 0,960a480,480 0 1,1 0,-960z"/>
+    <group android:scaleX="0.55" android:scaleY="0.55" android:translateX="216" android:translateY="744">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M80-160q-33 0-56.5-23.5T0-240h160q-33 0-56.5-23.5T80-320v-440q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v440q0 33-23.5 56.5T800-240h160q0 33-23.5 56.5T880-160H80Zm400-40q17 0 28.5-11.5T520-240q0-17-11.5-28.5T480-280q-17 0-28.5 11.5T440-240q0 17 11.5 28.5T480-200ZM160-320h640v-440H160v440Zm0 0v-440 440Z"/>
+    </group>
+</vector>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GENERATED STYLE OVERRIDES — keep values/ and values-v27/ in sync (upstream defines both). -->
+<resources>
+    <!-- Same as values/styles_brand.xml, on top of upstream's v27 base theme. -->
+    <style name="KdeConnectTheme" parent="KdeConnectThemeBase.V27">
+        <!-- Janus navy colours (colors_janus.xml; night variant in values-night) -->
+        <item name="colorPrimary">@color/janus_primary</item>
+        <item name="colorOnPrimary">@color/janus_on_primary</item>
+        <item name="colorPrimaryContainer">@color/janus_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/janus_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/janus_inverse_primary</item>
+        <item name="colorSecondary">@color/janus_secondary</item>
+        <item name="colorOnSecondary">@color/janus_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/janus_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/janus_on_secondary_container</item>
+        <item name="colorTertiary">@color/janus_tertiary</item>
+        <item name="colorOnTertiary">@color/janus_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/janus_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/janus_on_tertiary_container</item>
+        <item name="colorError">@color/janus_error</item>
+        <item name="colorOnError">@color/janus_on_error</item>
+        <item name="colorErrorContainer">@color/janus_error_container</item>
+        <item name="colorOnErrorContainer">@color/janus_on_error_container</item>
+        <item name="android:colorBackground">@color/janus_background</item>
+        <item name="colorOnBackground">@color/janus_on_background</item>
+        <item name="colorSurface">@color/janus_surface</item>
+        <item name="colorOnSurface">@color/janus_on_surface</item>
+        <item name="colorSurfaceVariant">@color/janus_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/janus_on_surface_variant</item>
+        <item name="colorSurfaceInverse">@color/janus_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/janus_inverse_on_surface</item>
+        <item name="colorOutline">@color/janus_outline</item>
+        <item name="colorOutlineVariant">@color/janus_outline_variant</item>
+        <item name="colorSurfaceBright">@color/janus_surface_bright</item>
+        <item name="colorSurfaceDim">@color/janus_surface_dim</item>
+        <item name="colorSurfaceContainerLowest">@color/janus_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/janus_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/janus_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/janus_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/janus_surface_container_highest</item>
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.GeConnect.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.GeConnect.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.GeConnect.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.GeConnect.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.GeConnect.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.GeConnect.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.GeConnect.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.GeConnect.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.GeConnect.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.GeConnect.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.GeConnect.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.GeConnect.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.GeConnect.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.GeConnect.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.GeConnect.LabelSmall</item>
+    </style>
+
+    <style name="PreferenceThemeOverlay" parent="BasePreferenceThemeOverlay">
+        <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
+        <item name="preferenceStyle">@style/GePreference</item>
+        <item name="preferenceScreenStyle">@style/GePreference.Screen</item>
+        <item name="preferenceCategoryStyle">@style/GePreference.Category</item>
+        <item name="switchPreferenceStyle">@style/GePreference.Switch</item>
+        <item name="switchPreferenceCompatStyle">@style/GePreference.SwitchCompat</item>
+        <item name="checkBoxPreferenceStyle">@style/GePreference.CheckBox</item>
+        <item name="dialogPreferenceStyle">@style/GePreference.Dialog</item>
+        <item name="editTextPreferenceStyle">@style/GePreference.EditText</item>
+        <item name="dropdownPreferenceStyle">@style/GePreference.DropDown</item>
+        <item name="seekBarPreferenceStyle">@style/GePreference.SeekBar</item>
+        <item name="preferenceFragmentCompatStyle">@style/GePreferenceFragment</item>
+    </style>
+</resources>

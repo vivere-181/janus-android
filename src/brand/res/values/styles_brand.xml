@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GENERATED STYLE OVERRIDES — keep values/ and values-v27/ in sync (upstream defines both). -->
+<resources>
+    <!-- Overrides upstream's KdeConnectTheme so XML screens use Google Sans Flex like our
+         Compose screens (Material's text styles set their own font, so each is overridden). -->
+    <style name="KdeConnectTheme" parent="KdeConnectThemeBase">
+        <!-- Janus navy colours (colors_janus.xml; night variant in values-night) -->
+        <item name="colorPrimary">@color/janus_primary</item>
+        <item name="colorOnPrimary">@color/janus_on_primary</item>
+        <item name="colorPrimaryContainer">@color/janus_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/janus_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/janus_inverse_primary</item>
+        <item name="colorSecondary">@color/janus_secondary</item>
+        <item name="colorOnSecondary">@color/janus_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/janus_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/janus_on_secondary_container</item>
+        <item name="colorTertiary">@color/janus_tertiary</item>
+        <item name="colorOnTertiary">@color/janus_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/janus_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/janus_on_tertiary_container</item>
+        <item name="colorError">@color/janus_error</item>
+        <item name="colorOnError">@color/janus_on_error</item>
+        <item name="colorErrorContainer">@color/janus_error_container</item>
+        <item name="colorOnErrorContainer">@color/janus_on_error_container</item>
+        <item name="android:colorBackground">@color/janus_background</item>
+        <item name="colorOnBackground">@color/janus_on_background</item>
+        <item name="colorSurface">@color/janus_surface</item>
+        <item name="colorOnSurface">@color/janus_on_surface</item>
+        <item name="colorSurfaceVariant">@color/janus_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/janus_on_surface_variant</item>
+        <item name="colorSurfaceInverse">@color/janus_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/janus_inverse_on_surface</item>
+        <item name="colorOutline">@color/janus_outline</item>
+        <item name="colorOutlineVariant">@color/janus_outline_variant</item>
+        <item name="colorSurfaceBright">@color/janus_surface_bright</item>
+        <item name="colorSurfaceDim">@color/janus_surface_dim</item>
+        <item name="colorSurfaceContainerLowest">@color/janus_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/janus_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/janus_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/janus_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/janus_surface_container_highest</item>
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.GeConnect.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.GeConnect.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.GeConnect.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.GeConnect.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.GeConnect.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.GeConnect.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.GeConnect.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.GeConnect.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.GeConnect.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.GeConnect.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.GeConnect.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.GeConnect.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.GeConnect.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.GeConnect.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.GeConnect.LabelSmall</item>
+    </style>
+
+    <!-- Preference screens: rounded card rows, section headers, no empty icon space. -->
+    <style name="PreferenceThemeOverlay" parent="BasePreferenceThemeOverlay">
+        <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
+        <item name="preferenceStyle">@style/GePreference</item>
+        <item name="preferenceScreenStyle">@style/GePreference.Screen</item>
+        <item name="preferenceCategoryStyle">@style/GePreference.Category</item>
+        <item name="switchPreferenceStyle">@style/GePreference.Switch</item>
+        <item name="switchPreferenceCompatStyle">@style/GePreference.SwitchCompat</item>
+        <item name="checkBoxPreferenceStyle">@style/GePreference.CheckBox</item>
+        <item name="dialogPreferenceStyle">@style/GePreference.Dialog</item>
+        <item name="editTextPreferenceStyle">@style/GePreference.EditText</item>
+        <item name="dropdownPreferenceStyle">@style/GePreference.DropDown</item>
+        <item name="seekBarPreferenceStyle">@style/GePreference.SeekBar</item>
+        <item name="preferenceFragmentCompatStyle">@style/GePreferenceFragment</item>
+    </style>
+
+    <!-- Cards separate the rows; no divider lines. -->
+    <style name="GePreferenceFragment" parent="PreferenceFragment.Material">
+        <item name="android:divider">@null</item>
+    </style>
+
+    <style name="GePreference" parent="Preference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.Screen" parent="Preference.PreferenceScreen.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.Category" parent="Preference.Category.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference_category</item>
+    </style>
+    <style name="GePreference.Switch" parent="Preference.SwitchPreference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+        <item name="android:widgetLayout">@layout/preference_widget_material_switch</item>
+    </style>
+    <style name="GePreference.SwitchCompat" parent="Preference.SwitchPreferenceCompat.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.CheckBox" parent="Preference.CheckBoxPreference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.Dialog" parent="Preference.DialogPreference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.EditText" parent="Preference.DialogPreference.EditTextPreference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference</item>
+    </style>
+    <style name="GePreference.DropDown" parent="Preference.DropDown.Material">
+        <item name="iconSpaceReserved">false</item>
+    </style>
+    <style name="GePreference.SeekBar" parent="Preference.SeekBarPreference.Material">
+        <item name="iconSpaceReserved">false</item>
+        <item name="android:layout">@layout/ge_preference_seekbar</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <style name="TextAppearance.GeConnect.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/google_sans_flex</item>
+        <item name="fontFamily">@font/google_sans_flex</item>
+    </style>
+
+    <!-- Remote input's mouse buttons: large tonal buttons, Google-style. -->
+    <style name="KdeConnectButton.IconButton" parent="Widget.Material3.Button.TonalButton">
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconSize">28dp</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="KdeConnectButton.IconButton.Secondary" parent="Widget.Material3.Button.TonalButton">
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="backgroundTint">?attr/colorSurfaceContainerHighest</item>
+    </style>
+
+    <!-- Share sheet: a transparent window over the app that's sharing. -->
+    <style name="GeTheme.ShareSheet" parent="KdeConnectTheme">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

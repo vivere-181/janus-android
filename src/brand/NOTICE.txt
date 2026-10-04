@@ -1,0 +1,18 @@
+This app is based on KDE Connect for Android
+https://invent.kde.org/network/kdeconnect-android
+
+Copyright © the KDE Connect authors, including Albert Vaca Cintora, Aleix Pol,
+Inoki Shaw, Matthijs Tijink, Nicolas Fella, Philip Cohn-Cort, Piyush Aggarwal,
+Simon Redman, Erik Duisters, Isira Seneviratne, Vineet Garg, Anjani Kumar,
+Samoilenko Yuri, Aniket Kumar, Àlex Fiestas, Daniel Tang, Maxim Leshchenko,
+Holger Kaelberer, Saikrishna Arcot, ShellWen Chen, and everyone else who has
+contributed to KDE Connect over the years.
+
+Modifications copyright © 2026 The Janus contributors.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License, version 3, as published by the
+Free Software Foundation (KDE Connect's own files may also be used under GPL
+version 2). It is distributed WITHOUT ANY WARRANTY. The full text of the GNU
+GPL version 3 follows, then the licenses of the libraries this app uses.
+--------------------------------------------------------------------------------

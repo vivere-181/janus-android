@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ge.connect: our own drawing of a 14-inch MacBook Pro (Silver), front view, lid open. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="240dp" android:height="160dp"
+    android:viewportWidth="240" android:viewportHeight="160">
+    <!-- Lid: thin aluminium edge, then the black bezel -->
+    <path android:fillColor="#FFC9CACD" android:pathData="M38,10h164a8,8 0,0 1,8 8v112h-180v-112a8,8 0,0 1,8 -8z"/>
+    <path android:fillColor="#FF0A0A0B" android:pathData="M39.5,11.5h161a6.5,6.5 0,0 1,6.5 6.5v112h-174v-112a6.5,6.5 0,0 1,6.5 -6.5z"/>
+    <!-- Display, with a soft wallpaper-like gradient -->
+    <path android:pathData="M37,17h166v109h-166z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="37" android:startY="17" android:endX="203" android:endY="126">
+                <item android:offset="0" android:color="#FF1B2B5E"/>
+                <item android:offset="0.55" android:color="#FF45307A"/>
+                <item android:offset="1" android:color="#FF0E1633"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Soft light across the screen -->
+    <path android:fillColor="#14FFFFFF" android:pathData="M37,17h70l-40,109h-30z"/>
+    <!-- Notch -->
+    <path android:fillColor="#FF0A0A0B" android:pathData="M108,17h24v3.5a2.5,2.5 0,0 1,-2.5 2.5h-19a2.5,2.5 0,0 1,-2.5 -2.5z"/>
+    <path android:fillColor="#FF1C1C20" android:pathData="M120,19.2m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <!-- Hinge line -->
+    <path android:fillColor="#FF050506" android:pathData="M30,128h180v2h-180z"/>
+    <!-- Base: top deck, then the front edge -->
+    <path android:fillColor="#FFD9DADD" android:pathData="M16,130h208l-3,5h-202z"/>
+    <path android:fillColor="#FFB4B6BA" android:pathData="M19,135h202a3,3 0,0 1,-3 3h-196a3,3 0,0 1,-3 -3z"/>
+    <path android:fillColor="#FFF0F1F3" android:pathData="M16,130h208v0.8h-208z"/>
+    <!-- Thumb cut-out on the front edge -->
+    <path android:fillColor="#FFBFC1C5" android:pathData="M104,130h32v1.6a2.4,2.4 0,0 1,-2.4 2.4h-27.2a2.4,2.4 0,0 1,-2.4 -2.4z"/>
+</vector>

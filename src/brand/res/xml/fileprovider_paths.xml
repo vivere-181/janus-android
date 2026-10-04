@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ge.connect: upstream paths (src/main) plus note attachments (R30) and camera captures for notes -->
+<paths>
+    <external-path
+        name="external_files"
+        path="." />
+    <external-path name="images" path="Android/data/io.github.vivere_181.janus/files/Pictures" />
+    <files-path name="note_attachments" path="attachments/" />
+    <cache-path name="note_camera" path="note_camera/" />
+</paths>
