@@ -74,7 +74,16 @@ object PhoneStatus {
             app.getSystemService(android.net.ConnectivityManager::class.java).registerDefaultNetworkCallback(
                 object : android.net.ConnectivityManager.NetworkCallback() {
                     override fun onAvailable(network: android.net.Network) = reportSoon()
-                    override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) = reportSoon()
+                    // Wi-Fi reports a capabilities change on every signal-strength step: only react when the kind of
+                    // network or its validation changes (R34).
+                    override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) {
+                        val kind = listOf(
+                            android.net.NetworkCapabilities.TRANSPORT_WIFI, android.net.NetworkCapabilities.TRANSPORT_CELLULAR,
+                            android.net.NetworkCapabilities.TRANSPORT_ETHERNET, android.net.NetworkCapabilities.TRANSPORT_VPN,
+                        ).filter { caps.hasTransport(it) }.joinToString(",") +
+                            "|" + caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                        if (kind != lastNetworkKind) { lastNetworkKind = kind; reportSoon() }
+                    }
                     override fun onLost(network: android.net.Network) = reportSoon()
                 },
             )
@@ -117,6 +126,8 @@ object PhoneStatus {
     }
 
     private val reportAll = Runnable { connectedDevices().forEach(::report) }
+
+    @Volatile private var lastNetworkKind: String? = null
 
     /** Last text sent to each device: a report is only sent when something changed. */
     private val lastSent = java.util.concurrent.ConcurrentHashMap<String, String>()

@@ -180,10 +180,26 @@ class NotesWidget : GlanceAppWidget() {
 
         fun init(context: Context) { appContext = context.applicationContext }
 
-        /** The notes changed: redraw the widgets (Glance also picks it up by itself while its session is alive). */
+        private var pending: kotlinx.coroutines.Job? = null
+
+        /**
+         * The notes changed: redraw the widgets (Glance also picks it up by itself while its session is alive). Skipped when
+         * no Notes widget is on the home screen; bursts (typing, a sync batch) make one update (R34).
+         */
         fun requestUpdate() {
             val context = appContext ?: return
-            scope.launch { runCatching { NotesWidget().updateAll(context) } }
+            val placed = runCatching {
+                android.appwidget.AppWidgetManager.getInstance(context)
+                    .getAppWidgetIds(android.content.ComponentName(context, NotesWidgetReceiver::class.java)).isNotEmpty()
+            }.getOrDefault(false)
+            if (!placed) return
+            synchronized(this) {
+                pending?.cancel()
+                pending = scope.launch {
+                    kotlinx.coroutines.delay(500)
+                    runCatching { NotesWidget().updateAll(context) }
+                }
+            }
         }
     }
 }

@@ -116,11 +116,11 @@ object DeviceProfile {
         put("brand", Build.BRAND)
         put("model", Build.MODEL)
         put("device", Build.DEVICE)
-        marketName()?.let { put("market", it) }
+        market?.let { put("market", it) }
         put("sdk", Build.VERSION.SDK_INT)
         put("release", Build.VERSION.RELEASE)
         DeviceStats.skin?.let { put("skin", it) }
-        colorCode()?.let { put("colorCode", it) }
+        colorCode?.let { put("colorCode", it) }
         put("screen", screen())
         accents()?.let { put("accent", it) }
         country()?.let { put("country", it) }
@@ -129,6 +129,10 @@ object DeviceProfile {
         put("app", BuildConfig.VERSION_NAME)
         put("caps", JSONArray(CAPS))
     }
+
+    // These don't change while the app runs; reading them spawns getprop, so only once (R34).
+    private val market by lazy { marketName() }
+    private val colorCode by lazy { colorCode() }
 
     /** "Galaxy S22 Ultra": Samsung's default device name, else a marketing-name property; null if the phone has none. */
     private fun marketName(): String? =
