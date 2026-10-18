@@ -20,9 +20,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,16 +68,26 @@ fun NavRow(
     leading: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    SegmentedListItem(
+    // A Surface with a ListItem rather than SegmentedListItem: that one keeps a TV remote's focus from moving
+    // between rows. With a remote (Android TV), the focused row gets a clear ring.
+    val interaction = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    androidx.compose.material3.Surface(
         onClick = onClick,
-        shapes = shapes,
         enabled = enabled,
-        leadingContent = leading ?: icon?.let { { IconBadge(it, iconContainer, iconColor) } },
-        supportingContent = summary?.let { { Text(it) } },
-        trailingContent = trailing,
-        colors = ListItemDefaults.segmentedColors(containerColor = LocalAppSurfaces.current.card),
+        shape = shapes.shape,
+        color = LocalAppSurfaces.current.card,
+        border = if (focused) androidx.compose.foundation.BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
+        interactionSource = interaction,
     ) {
-        Text(title)
+        androidx.compose.material3.ListItem(
+            headlineContent = { Text(title) },
+            supportingContent = summary?.let { { Text(it) } },
+            leadingContent = (leading ?: icon?.let { { IconBadge(it, iconContainer, iconColor) } }),
+            trailingContent = trailing,
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.alpha(if (enabled) 1f else 0.38f),
+        )
     }
 }
 

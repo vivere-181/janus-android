@@ -137,7 +137,7 @@ class NoteEditorActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         noteId = savedInstanceState?.getString(EXTRA_ID) ?: intent.getStringExtra(EXTRA_ID)?.takeIf { NotesStore.get(it) != null }
             ?: NotesStore.create().id
-        val isNew = intent.getStringExtra(EXTRA_ID) == null && savedInstanceState == null
+        val isNew = (intent.getStringExtra(EXTRA_ID) == null || intent.getBooleanExtra(EXTRA_EDIT, false)) && savedInstanceState == null
         setContent { AppTheme { Editor(isNew) } }
     }
 
@@ -514,12 +514,25 @@ class NoteEditorActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_ID = "note"
+        /** Open ready to type: the cursor at the end and the keyboard up (the widget's + button). */
+        private const val EXTRA_EDIT = "edit"
 
+        /** From inside the app: the editor goes on top of the current screen, Back returns to it. */
         fun intent(context: Context, id: String) = Intent(context, NoteEditorActivity::class.java).putExtra(EXTRA_ID, id)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         fun newNoteIntent(context: Context) = Intent(context, NoteEditorActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+
+        /**
+         * From a widget or tile: the editor opens in its own task (its own taskAffinity, see the manifest), replacing a note
+         * opened that way before, so it never piles up on top of the app's screens (opening Janus from the launcher shows
+         * Home, not a leftover note).
+         */
+        fun externalIntent(context: Context, id: String, edit: Boolean = false) =
+            intent(context, id).addFlags(EXTERNAL_FLAGS).putExtra(EXTRA_EDIT, edit)
+
+        fun newNoteExternalIntent(context: Context) = newNoteIntent(context).addFlags(EXTERNAL_FLAGS)
+
+        private const val EXTERNAL_FLAGS = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 }
 

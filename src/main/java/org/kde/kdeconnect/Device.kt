@@ -639,6 +639,7 @@ class Device : PacketReceiver {
     fun isPluginEnabled(pluginKey: String): Boolean {
         // ge.connect: with someone else's device only sharing is available (see DeviceOwnership)
         if (!ge.connect.devices.DeviceOwnership.allows(context, deviceId, pluginKey)) return false
+        if (!ge.connect.tv.TvDevices.allows(this, pluginKey)) return false // ge.connect: TVs only get TV features
         val enabledByDefault = PluginFactory.getPluginInfo(pluginKey).isEnabledByDefault
         return TrustedDevices.getDeviceSettings(context, deviceId).getBoolean(pluginKey, enabledByDefault)
     }

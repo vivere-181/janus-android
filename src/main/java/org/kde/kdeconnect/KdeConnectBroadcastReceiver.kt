@@ -39,6 +39,10 @@ class KdeConnectBroadcastReceiver : BroadcastReceiver() {
             }
 
             Intent.ACTION_SCREEN_ON -> try {
+                // ge.connect: with every paired device already connected there's nothing to find; a search would hold
+                // Wi-Fi's multicast lock for nothing on each screen-on (the biggest battery cost in batterystats).
+                val paired = KdeConnect.getInstance().devices.values.filter { it.isPaired }
+                if (paired.isNotEmpty() && paired.all { it.isReachable }) return
                 BackgroundService.ForceRefreshConnections(context)
             } catch (e: IllegalStateException) { // To catch ForegroundServiceStartNotAllowedException
                 Log.w("BroadcastReceiver", "Couldn't start the foreground service.", e)

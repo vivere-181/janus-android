@@ -37,3 +37,10 @@
 
 # ge.connect: plugins are created by reflection (PluginFactory), wherever their package is
 -keep class * extends org.kde.kdeconnect.plugins.Plugin { <init>(); }
+
+# ge.connect: AirPlay receiving (src/airplay): the engine calls these from native code by name.
+-keep class io.github.jqssun.airplay.bridge.RaopCallbackHandler { *; }
+-keep class * implements io.github.jqssun.airplay.bridge.RaopCallbackHandler { *; }
+-keep class io.github.jqssun.airplay.bridge.LogListener { *; }
+-keep class * implements io.github.jqssun.airplay.bridge.LogListener { *; }
+-keep class io.github.jqssun.airplay.bridge.NativeBridge { *; }

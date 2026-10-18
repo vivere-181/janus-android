@@ -178,8 +178,10 @@ class NotesActivity : AppCompatActivity() {
                 return@Scaffold
             }
             LazyVerticalStaggeredGrid(
+                // Below the title bar rather than under it: overlapping, a TV remote's focus can't leave the bar.
+                modifier = Modifier.padding(top = padding.calculateTopPadding()),
                 columns = StaggeredGridCells.Fixed(2),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 4.dp, bottom = padding.calculateBottomPadding() + 96.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = padding.calculateBottomPadding() + 96.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalItemSpacing = 10.dp,
             ) {

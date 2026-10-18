@@ -26,6 +26,8 @@ object NotesSync {
     private const val DEBOUNCE_MILLIS = 1_000L
     private const val MAX_NOTES = 50
     private const val MAX_CHARS = 200_000
+    /** Through Janus Cloud an envelope is at most 96 KiB, sealed and base64'd (R37). */
+    private const val CLOUD_MAX_CHARS = 40_000
 
     private lateinit var app: Application
     private val worker by lazy { Handler(HandlerThread(TAG).apply { start() }.looper) }
@@ -36,8 +38,10 @@ object NotesSync {
         this.app = app
         KdeConnect.getInstance().addDeviceListChangedCallback(CALLBACK_KEY) {
             worker.post {
-                val reachable = KdeConnect.getInstance().devices.values.filter { it.isReachable }.map { it.deviceId }.toSet()
-                ready.retainAll(reachable) // a new connection needs a new hello
+                // A new connection needs a new hello; a Mac that's away stays ready through Janus Cloud (R37).
+                val reachable = KdeConnect.getInstance().devices.values
+                    .filter { it.isReachable || ge.connect.cloud.CloudCompanion.away(it) }.map { it.deviceId }.toSet()
+                ready.retainAll(reachable)
             }
         }
     }
@@ -52,7 +56,8 @@ object NotesSync {
     private val pushAll = Runnable { macs().forEach(::push) }
 
     private fun macs() = KdeConnect.getInstance().devices.values.filter {
-        it.deviceId in ready && it.isReachable && it.isPaired && ge.connect.devices.DeviceOwnership.isMine(it)
+        it.deviceId in ready && (it.isReachable || ge.connect.cloud.CloudCompanion.away(it)) && it.isPaired &&
+            ge.connect.devices.DeviceOwnership.isMine(it)
     }
 
     /** "ge.connect.notes:<json>" from a Mac. */
@@ -62,7 +67,8 @@ object NotesSync {
             "hello" -> {
                 ready += device.deviceId
                 push(device)
-                NoteAttachments.requestMissing(device) // R30: files announced earlier that never arrived
+                // R30: files announced earlier that never arrived (attachments need the LAN, R37)
+                if (device.isReachable) NoteAttachments.requestMissing(device)
             }
             "push" -> {
                 val notes = message.optJSONArray("notes") ?: JSONArray()
@@ -76,7 +82,7 @@ object NotesSync {
                     acks.put(JSONObject().put("id", note.id).put("rev", note.rev))
                 }
                 send(device, JSONObject().put("v", 1).put("op", "ack").put("acks", acks))
-                if (changed) NoteAttachments.requestMissing(device) // R30: files these notes refer to
+                if (changed && device.isReachable) NoteAttachments.requestMissing(device) // R30: files these notes refer to
                 // Pass what arrived on to other Macs, and send back conflict copies made here.
                 if (changed) localChange()
             }
@@ -88,7 +94,7 @@ object NotesSync {
                 }
             }
             // R30 attachments
-            "want" -> NoteAttachments.wanted(device, strings(message.optJSONArray("files")))
+            "want" -> if (device.isReachable) NoteAttachments.wanted(device, strings(message.optJSONArray("files")))
             "file" -> NoteAttachments.announced(message.optString("name"))
             "have" -> NoteAttachments.had(device, strings(message.optJSONArray("files")))
             else -> Log.i(TAG, "Ignoring notes op ${message.optString("op")}")
@@ -101,10 +107,11 @@ object NotesSync {
         if (pending.isEmpty()) return
         var batch = JSONArray()
         var size = 0
+        val maxChars = if (device.isReachable) MAX_CHARS else CLOUD_MAX_CHARS
         for ((note, base) in pending) {
             val o = note.toJson().apply { base?.let { put("base", it) } }
             val length = o.toString().length
-            if (batch.length() > 0 && (batch.length() >= MAX_NOTES || size + length > MAX_CHARS)) {
+            if (batch.length() > 0 && (batch.length() >= MAX_NOTES || size + length > maxChars)) {
                 sendPush(device, batch)
                 batch = JSONArray(); size = 0
             }

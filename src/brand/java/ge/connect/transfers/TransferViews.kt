@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -85,6 +86,35 @@ fun TransferCard(item: Transfers.Item, modifier: Modifier = Modifier, compact: B
     }
 }
 
+/**
+ * A placeholder in the shape of a compact [TransferCard] (preview, badge spot, two text lines), shown on Home until real
+ * transfers fill the row, so the section reads as "your files go here". Static (no shimmer): it costs nothing.
+ */
+@Composable
+fun TransferPlaceholder(@DrawableRes icon: Int, modifier: Modifier = Modifier) {
+    val surface = LocalAppSurfaces.current.card
+    val bar = MaterialTheme.colorScheme.surfaceContainerHighest
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.BottomCenter) {
+            Box(
+                Modifier.fillMaxWidth().aspectRatio(1f).padding(bottom = 18.dp).clip(RoundedCornerShape(28.dp)).background(surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(icon), null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                    modifier = Modifier.fillMaxSize(0.3f),
+                )
+            }
+            Box(
+                Modifier.size(36.dp).border(4.dp, MaterialTheme.colorScheme.background, CircleShape).padding(2.dp).background(bar, CircleShape),
+            )
+        }
+        Box(Modifier.padding(top = 12.dp).fillMaxWidth(0.7f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(bar))
+        Box(Modifier.padding(top = 8.dp).fillMaxWidth(0.45f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(bar.copy(alpha = 0.6f)))
+    }
+}
+
 @Composable
 private fun Preview(item: Transfers.Item, modifier: Modifier) {
     val shape = RoundedCornerShape(28.dp)
@@ -104,7 +134,7 @@ private fun Preview(item: Transfers.Item, modifier: Modifier) {
         }
         // Finished: a check pops in on the preview.
         AnimatedVisibility(
-            visible = item.state == Transfers.State.DONE && !item.awaitingAccept && item.kind == Transfers.Kind.FILE,
+            visible = item.state == Transfers.State.DONE && !item.awaitingAccept && !item.awaitingDelivery && item.kind == Transfers.Kind.FILE,
             enter = scaleIn() + fadeIn(),
             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
         ) {
@@ -147,17 +177,30 @@ private fun Status(item: Transfers.Item, compact: Boolean) {
             Text(stringResource(R.string.transfers_awaiting_accept), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column
         }
+        val viaCloud = stringResource(R.string.transfers_via_cloud).takeIf { item.cloud }
+        if (item.awaitingDelivery) {
+            // Uploaded to Janus Cloud; the computer hasn't picked it up yet.
+            Text(
+                stringResource(R.string.transfers_awaiting_delivery, item.deviceName), style = style,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
+                maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            return@Column
+        }
         when (item.state) {
             Transfers.State.WAITING -> Text(stringResource(R.string.transfers_waiting), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Transfers.State.RUNNING -> {
                 LinearWavyProgressIndicator(progress = { item.progress }, modifier = Modifier.padding(top = 4.dp).fillMaxWidth(if (compact) 0.8f else 0.6f))
                 Text(
                     if (compact) "${(item.progress * 100).toInt()}%"
-                    else stringResource(
-                        R.string.transfers_progress,
-                        (item.progress * 100).toInt(),
-                        Formatter.formatShortFileSize(context, item.bytesPerSecond),
-                    ),
+                    else listOfNotNull(
+                        stringResource(
+                            R.string.transfers_progress,
+                            (item.progress * 100).toInt(),
+                            Formatter.formatShortFileSize(context, item.bytesPerSecond),
+                        ),
+                        viaCloud,
+                    ).joinToString(" · "),
                     style = style, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -166,6 +209,7 @@ private fun Status(item: Transfers.Item, compact: Boolean) {
             Transfers.State.DONE -> Text(
                 if (compact) who else listOfNotNull(
                     who,
+                    viaCloud,
                     Formatter.formatShortFileSize(context, item.size).takeIf { item.kind == Transfers.Kind.FILE },
                     if (System.currentTimeMillis() - item.time < DateUtils.MINUTE_IN_MILLIS) stringResource(R.string.transfers_just_now)
                     else DateUtils.getRelativeTimeSpanString(item.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString(),

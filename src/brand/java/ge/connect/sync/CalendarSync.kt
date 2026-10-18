@@ -35,6 +35,7 @@ import java.util.TimeZone
  */
 object CalendarSync {
     private const val TAG = "CalendarSync"
+    private const val CLOUD_MAX_CHARS = 80_000
     private const val ID = "ge.connect.calendar"
     private const val CALLBACK_KEY = "ge.connect.calendar"
     private const val DEBOUNCE_MILLIS = 2_000L
@@ -133,7 +134,7 @@ object CalendarSync {
         worker.postDelayed(sendAll, DEBOUNCE_MILLIS)
     }
 
-    private val sendAll = Runnable { macs().forEach(::send) }
+    private val sendAll = Runnable { (macs() + ge.connect.cloud.CloudCompanion.awayMacs()).forEach(::send) } // R37: away Macs via the cloud
 
     /** The owner's own computers (phones running our app don't use it). */
     private fun macs() = KdeConnect.getInstance().devices.values.filter {
@@ -157,6 +158,13 @@ object CalendarSync {
             JSONObject().put("v", 1).put("calendars", JSONArray()).put("events", JSONArray()).put("off", true).toString()
         }
         if (lastSent[device.deviceId] == key) return
+        if (!device.isReachable) {
+            // R37: an away Mac gets it through Janus Cloud (envelopes are at most 96 KiB).
+            val text = JSONObject(key).put("now", System.currentTimeMillis()).toString()
+            if (text.length > CLOUD_MAX_CHARS) { Log.i(TAG, "Calendar snapshot too big for the cloud (${text.length})"); return }
+            if (ge.connect.cloud.CloudCompanion.away(device) && ge.connect.cloud.CloudCompanion.send(device, ID, text)) lastSent[device.deviceId] = key
+            return
+        }
         lastSent[device.deviceId] = key
         // Always cancel first: the Mac's engine ignores a repost of an id it still has (R22).
         device.sendPacket(NetworkPacket("kdeconnect.notification").apply {

@@ -84,6 +84,13 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
     <!-- ge.connect: switching Wireless debugging on for mirroring to the Mac (R25); granted from the Mac over adb -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
+    <!-- ge.connect: speech recognition on the phone for the TV remote's voice search -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -188,6 +195,8 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
         <activity
             android:name="ge.connect.notes.NoteEditorActivity"
             android:exported="false"
+            android:taskAffinity="${applicationId}.note"
+            android:autoRemoveFromRecents="true"
             android:windowSoftInputMode="adjustResize"
             android:label="@string/notes_title" />
         <receiver
@@ -201,6 +210,26 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
                 android:name="android.appwidget.provider"
                 android:resource="@xml/notes_widget_info" />
         </receiver>
+        <receiver
+            android:name="ge.connect.notes.NoteWidgetReceiver"
+            android:exported="true"
+            android:label="@string/note_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/note_widget_info" />
+        </receiver>
+        <activity
+            android:name="ge.connect.notes.NoteWidgetConfigureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <service
             android:name="ge.connect.notes.NewNoteTileService"
             android:exported="true"
@@ -260,6 +289,9 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
         <activity
             android:name="ge.connect.settings.LiveActivitiesActivity"
             android:exported="false" />
+        <activity
+            android:name="ge.connect.settings.CloudActivity"
+            android:exported="false" /> <!-- ge.connect: Janus Cloud (R36) -->
         <activity
             android:name="ge.connect.sync.CallPermissionActivity"
             android:exported="false"
@@ -533,10 +565,48 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
             android:label="@string/manifest_label_share">
             <!-- ge.connect: share intents now go to ge.connect.share.ShareSheetActivity -->
         </activity>
+        <!-- ge.connect: on a TV, a screen mirrored with AirPlay (ge.connect.airplay); its entry in the TV's app row
+             (with the application's banner), and openable through the TV remote (janus://screen) -->
+        <activity
+            android:name="ge.connect.airplay.MirrorActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation"
+            android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="janus" android:host="screen" />
+            </intent-filter>
+        </activity>
+        <!-- ge.connect: on a TV, what the phone's remote asks for that remote keys can't do (janus://inputs) -->
+        <activity
+            android:name="ge.connect.tv.TvActions"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="janus" android:host="inputs" />
+                <data android:scheme="janus" android:host="launch" />
+                <data android:scheme="janus" android:host="hello" />
+                <data android:scheme="janus" android:host="search" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="ge.connect.share.SendSheetActivity"
             android:exported="false"
             android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:taskAffinity="io.github.vivere_181.janus.send"
             android:theme="@style/GeTheme.ShareSheet" />
         <activity
             android:name="ge.connect.share.ShareSheetActivity"

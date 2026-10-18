@@ -246,23 +246,66 @@ object NoteMarkdown {
         return null
     }
 
-    /** A line for previews (list cards, widget): its kind and text without Markdown. [index] = line index in the text. */
-    data class PreviewLine(val index: Int, val kind: Kind, val level: Int, val text: String, val checked: Boolean, val number: Int)
+    /** A styled run in a preview line's [PreviewLine.text]: [start] until [end]. */
+    data class StyleRange(val style: Style, val start: Int, val end: Int)
 
-    /** The lines after the title, ready to show without Markdown (blank lines and code fences left out). */
-    fun preview(text: String): List<PreviewLine> {
+    /**
+     * A line for previews (list cards, widgets): its kind and text without Markdown, plus where the inline styles go.
+     * [index] = line index in the text.
+     */
+    data class PreviewLine(
+        val index: Int, val kind: Kind, val level: Int, val text: String, val checked: Boolean, val number: Int,
+        val styles: List<StyleRange> = emptyList(),
+    )
+
+    /**
+     * The lines after the title, ready to show without Markdown (code fences left out). Blank lines are left out too,
+     * unless [keepBlank] (a run of them counts as one, and none at the start).
+     */
+    fun preview(text: String, keepBlank: Boolean = false): List<PreviewLine> {
         val lines = lines(text)
         val title = titleLine(lines)
-        return lines.filter { it !== title && it.kind != Kind.BLANK && it.kind != Kind.FENCE && it.kind != Kind.TABLE_RULE }.map {
-            val raw = text.substring(it.start, it.end)
-            val shown = when (it.kind) {
-                Kind.CODE -> raw
-                Kind.TABLE_ROW -> cells(text, it).joinToString("  │  ") { r -> cellText(text, r) }
-                Kind.ATTACHMENT -> ATTACHMENT.find(raw)?.groupValues?.get(1)?.replace(Regex("""\\(.)"""), "$1").orEmpty()
-                else -> plain(raw)
+        val result = ArrayList<PreviewLine>()
+        for (it in lines) {
+            if (it === title || it.kind == Kind.FENCE || it.kind == Kind.TABLE_RULE) continue
+            if (it.kind == Kind.BLANK) {
+                if (keepBlank && result.isNotEmpty() && result.last().kind != Kind.BLANK) result += PreviewLine(it.index, Kind.BLANK, 0, "", false, 0)
+                continue
             }
-            PreviewLine(it.index, it.kind, it.level, shown, it.checked, it.number)
+            val raw = text.substring(it.start, it.end)
+            when (it.kind) {
+                Kind.CODE -> result += PreviewLine(it.index, it.kind, it.level, raw, it.checked, it.number)
+                Kind.TABLE_ROW -> result += PreviewLine(it.index, it.kind, it.level, cells(text, it).joinToString("  │  ") { r -> cellText(text, r) }, false, 0)
+                Kind.ATTACHMENT -> result += PreviewLine(
+                    it.index, it.kind, it.level, ATTACHMENT.find(raw)?.groupValues?.get(1)?.replace(Regex("""\\(.)"""), "$1").orEmpty(), false, 0,
+                )
+                else -> {
+                    val (shown, styles) = styled(text.substring(it.contentStart, it.end))
+                    result += PreviewLine(it.index, it.kind, it.level, shown, it.checked, it.number, styles)
+                }
+            }
         }
+        while (result.lastOrNull()?.kind == Kind.BLANK) result.removeAt(result.lastIndex)
+        return result
+    }
+
+    /** A line's content without its inline Markdown, and where the styles go in it. */
+    fun styled(content: String): Pair<String, List<StyleRange>> {
+        val spans = spans(content, 0, content.length)
+        val hidden = BooleanArray(content.length)
+        spans.forEach { span -> span.markers.forEach { r -> for (k in r) if (k in hidden.indices) hidden[k] = true } }
+        val at = IntArray(content.length + 1)
+        val out = StringBuilder()
+        content.forEachIndexed { k, ch -> at[k] = out.length; if (!hidden[k]) out.append(ch) }
+        at[content.length] = out.length
+        val lead = out.length - out.trimStart().length
+        val shown = out.trim().toString()
+        val ranges = spans.filter { it.style != Style.ESCAPE && it.contentEnd > it.contentStart }.mapNotNull {
+            val start = (at[it.contentStart] - lead).coerceIn(0, shown.length)
+            val end = (at[it.contentEnd] - lead).coerceIn(0, shown.length)
+            if (end > start) StyleRange(it.style, start, end) else null
+        }
+        return shown to ranges
     }
 
     /** [text] of one line without its Markdown (for titles, previews, search results). */

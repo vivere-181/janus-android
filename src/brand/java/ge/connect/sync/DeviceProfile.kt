@@ -46,7 +46,7 @@ object DeviceProfile {
 
     /** The `ge.connect.*` commands and companion features this build understands. */
     private val CAPS = listOf(
-        "status", "ringer", "flashlight", "dnd", "dial", "call", "macstate", "macaction", "mirror", "calendar", "live", "device", "notes",
+        "status", "ringer", "flashlight", "dnd", "dial", "call", "macstate", "macaction", "mirror", "calendar", "live", "device", "notes", "cloud", "cloud2",
     )
 
     private lateinit var app: Application
@@ -77,12 +77,17 @@ object DeviceProfile {
         }
     }
 
+    /** Our relay socket just connected: away Macs get the profile again, as on a new LAN connection (R37). */
+    fun cloudConnected(devices: List<Device>) = worker.post {
+        devices.forEach { lastSent.remove(it.deviceId); send(it) }
+    }
+
     private fun changedSoon() {
         worker.removeCallbacks(sendAll)
         worker.postDelayed(sendAll, DEBOUNCE_MILLIS)
     }
 
-    private val sendAll = Runnable { computers().forEach(::send) }
+    private val sendAll = Runnable { (computers() + ge.connect.cloud.CloudCompanion.awayMacs()).forEach(::send) } // R37: away Macs via the cloud
 
     private fun computers() = KdeConnect.getInstance().devices.values.filter {
         it.isReachable && it.isPaired && ge.connect.devices.DeviceOwnership.isMine(it) && !PeerState.isPhone(it)
@@ -92,6 +97,13 @@ object DeviceProfile {
         val profile = runCatching { profile() }.onFailure { Log.w(TAG, "Couldn't describe the phone", it) }.getOrNull() ?: return
         val text = profile.toString()
         if (lastSent[device.deviceId] == text) return
+        if (!device.isReachable) {
+            if (ge.connect.cloud.CloudCompanion.away(device) && ge.connect.cloud.CloudCompanion.send(device, ID, text)) {
+                lastSent[device.deviceId] = text
+                Log.i(TAG, "Profile → ${device.name} through Janus Cloud")
+            }
+            return
+        }
         lastSent[device.deviceId] = text
         device.sendPacket(NetworkPacket("kdeconnect.notification").apply {
             this["id"] = ID

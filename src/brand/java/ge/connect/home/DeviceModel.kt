@@ -17,7 +17,6 @@ import org.kde.kdeconnect.KdeConnect
 import org.kde.kdeconnect.PairingHandler.PairState
 import org.kde.kdeconnect.helpers.security.SslHelper
 import org.kde.kdeconnect.plugins.Plugin
-import org.kde.kdeconnect.plugins.battery.BatteryPlugin
 import org.kde.kdeconnect.plugins.battery.DeviceBatteryInfo
 import org.kde.kdeconnect.ui.MainActivity
 import org.kde.kdeconnect_tp.R
@@ -114,12 +113,19 @@ data class DeviceUi(
     /** The owner's own device (everything) or someone else's (sharing only); see DeviceOwnership. */
     val mine: Boolean = true,
     val ownershipAnswered: Boolean = true,
+    /** Not on the same network, but reachable through Janus Cloud (R36): files can still be sent. */
+    val cloud: Boolean = false,
+    /** The relay connection is up (else sends wait and retry). */
+    val cloudConnected: Boolean = false,
+    /** A TV: Home is its remote (and screen sharing) instead of the usual features. */
+    val isTv: Boolean = false,
 ) {
     val paired get() = pairState == PairState.Paired
 }
 
 fun Device.toHomeUi(context: Context): DeviceUi {
     val live = isPaired && isReachable
+    val cloud = !live && ge.connect.cloud.JanusCloud.canSend(this)
     val plugins = loadedPlugins.values.sortedBy { ACTION_ORDER.indexOf(it.pluginKey).let { i -> if (i < 0) 99 else i } }
     return DeviceUi(
         id = deviceId,
@@ -130,7 +136,7 @@ fun Device.toHomeUi(context: Context): DeviceUi {
             .firstOrNull { !it.connected }?.time else null,
         pairState = pairStatus,
         verificationKey = verificationKey,
-        battery = if (live) getPlugin(BatteryPlugin::class.java)?.remoteBatteryInfo else null,
+        battery = if (live) ge.connect.sync.MacState.battery(this) else null,
         actions = if (live) plugins.flatMap { plugin ->
             plugin.getUiButtons().mapIndexed { index, button ->
                 if (plugin.pluginKey == "SharePlugin") {
@@ -140,7 +146,7 @@ fun Device.toHomeUi(context: Context): DeviceUi {
                     }
                 } else {
                     // Less-used tools go to the "More" list instead of the big tiles.
-                    val secondary = plugin.pluginKey in SECONDARY_PLUGINS || (plugin.pluginKey == "MousePadPlugin" && index > 0)
+                    val secondary = plugin.pluginKey in SECONDARY_PLUGINS
                     DeviceAction(
                         button.name, actionSymbol(plugin.pluginKey, index) ?: button.iconRes,
                         summary = actionSummary(context, plugin.pluginKey, index), secondary = secondary, run = button.onClick,
@@ -158,13 +164,32 @@ fun Device.toHomeUi(context: Context): DeviceUi {
                 summary = context.getString(R.string.camera_action_summary), secondary = true,
             ) { activity -> activity.startActivity(ge.connect.camera.CameraRemoteActivity.intent(activity, deviceId)) }
                 .takeIf { getPlugin(ge.connect.camera.GeCameraPlugin::class.java) != null },
-            // Notes synced with the owner's Mac (R29).
+            // Notes synced with the owner's Mac (R29): a big tile, where Remote input was.
+            DeviceAction(
+                context.getString(R.string.notes_title), R.drawable.ms_sticky_note_2_filled,
+                summary = context.getString(R.string.notes_action_summary),
+            ) { activity -> activity.startActivity(ge.connect.notes.NotesActivity.intent(activity)) }
+                .takeIf { ge.connect.devices.DeviceOwnership.isMine(this) && !ge.connect.sync.PeerState.isPhone(this) && !ge.connect.tv.TvDevices.isTv(this) },
+        ) + menuActions(context, this, plugins) else if (cloud) listOfNotNull(
+            // Away from the local network: files (R36), the clipboard as text and notes (R37) go through Janus Cloud.
+            DeviceAction(context.getString(R.string.send_action), R.drawable.ms_upload_filled) { activity ->
+                activity.startActivity(ge.connect.share.SendSheetActivity.intent(activity, deviceId))
+            },
+            DeviceAction(context.getString(R.string.send_clipboard), R.drawable.ms_content_paste_filled) { activity ->
+                val text = activity.getSystemService(android.content.ClipboardManager::class.java)?.primaryClip
+                    ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(activity)?.toString().orEmpty()
+                if (text.isBlank()) {
+                    android.widget.Toast.makeText(activity, R.string.cloud_clipboard_empty, android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    ge.connect.cloud.CloudCompanion.sendText(this, text, link = false)
+                    android.widget.Toast.makeText(activity, activity.getString(R.string.share_sent, name), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },
             DeviceAction(
                 context.getString(R.string.notes_title), R.drawable.ms_sticky_note_2,
                 summary = context.getString(R.string.notes_action_summary), secondary = true,
-            ) { activity -> activity.startActivity(ge.connect.notes.NotesActivity.intent(activity)) }
-                .takeIf { ge.connect.devices.DeviceOwnership.isMine(this) && !ge.connect.sync.PeerState.isPhone(this) },
-        ) + menuActions(context, this, plugins) else emptyList(),
+            ) { activity -> activity.startActivity(ge.connect.notes.NotesActivity.intent(activity)) },
+        ) else emptyList(),
         // Clipboard's menu entry duplicates its tile.
         menuEntries = if (live) plugins.filter { it.pluginKey != "ClipboardPlugin" }.flatMap { plugin ->
             if (plugin.pluginKey == "PingPlugin") {
@@ -177,11 +202,14 @@ fun Device.toHomeUi(context: Context): DeviceUi {
                 pluginsWithoutOptionalPermissions.values.filter { isPluginEnabled(it.pluginKey) }.map { PermissionRequest(it.displayName, it, true) }
         } else emptyList(),
         appearance = DeviceAppearance.of(context, this),
-        macControls = if (live) macControls(context, this) else emptyList(),
+        macControls = if (live || cloud) macControls(context, this) else emptyList(),
         isPhone = ge.connect.sync.PeerState.isPhone(this),
         nowPlaying = if (live) nowPlaying(this) else null,
         mine = ge.connect.devices.DeviceOwnership.isMine(this),
         ownershipAnswered = ge.connect.devices.DeviceOwnership.isAnswered(context, deviceId),
+        cloud = cloud,
+        cloudConnected = cloud && ge.connect.cloud.JanusCloud.link.value == ge.connect.cloud.JanusCloud.Link.CONNECTED,
+        isTv = ge.connect.tv.TvDevices.isTv(this),
     )
 }
 
@@ -190,8 +218,21 @@ private val HIDDEN_MAC_CONTROLS = setOf("ge-displaysleep", "ge-sleep")
 private val MAC_CONTROL_ORDER = listOf("ge-lock", "ge-mute", "ge-findmac", "ge-screenshot")
 
 private fun macControls(context: Context, device: Device): List<MacControl> {
-    val plugin = device.getPlugin(org.kde.kdeconnect.plugins.runcommand.RunCommandPlugin::class.java) ?: return emptyList()
-    return org.kde.kdeconnect.plugins.runcommand.GeRunCommands.commands(plugin)
+    val prefs = context.getSharedPreferences("ge_connect_mac_controls", Context.MODE_PRIVATE)
+    val plugin = device.getPlugin(org.kde.kdeconnect.plugins.runcommand.RunCommandPlugin::class.java)
+    val commands = if (plugin != null) {
+        org.kde.kdeconnect.plugins.runcommand.GeRunCommands.commands(plugin).also { list ->
+            // Remembered, so the Mac's actions can be run through Janus Cloud while it's away (R37).
+            val json = org.json.JSONArray(list.filter { it.first.startsWith("ge-") }.map { org.json.JSONArray(listOf(it.first, it.second)) }).toString()
+            if (prefs.getString(device.deviceId, null) != json) prefs.edit { putString(device.deviceId, json) }
+        }
+    } else {
+        runCatching {
+            val array = org.json.JSONArray(prefs.getString(device.deviceId, "[]"))
+            (0 until array.length()).map { array.getJSONArray(it).let { pair -> pair.getString(0) to pair.getString(1) } }
+        }.getOrDefault(emptyList())
+    }
+    return commands
         // The owner's own commands stay under More → Run Command; Display off was dropped (R19).
         .filter { (key, _) -> key.startsWith("ge-") && key !in HIDDEN_MAC_CONTROLS }
         .sortedBy { (key, _) -> MAC_CONTROL_ORDER.indexOf(key).let { if (it < 0) 99 else it } }
@@ -216,13 +257,15 @@ fun Device.encryptionInfo(context: Context): String = buildString {
     append(context.getString(R.string.protocol_version)).append(' ').append(protocolVersion)
 }
 
-private val SECONDARY_PLUGINS = setOf("RunCommandPlugin", "PresenterPlugin", "DigitizerPlugin")
+// Remote input is under More too (owner, 2026-10-16): Notes takes its tile.
+private val SECONDARY_PLUGINS = setOf("RunCommandPlugin", "PresenterPlugin", "DigitizerPlugin", "MousePadPlugin")
 
 private fun actionSummary(context: Context, pluginKey: String, buttonIndex: Int): String? = when {
     pluginKey == "RunCommandPlugin" -> context.getString(R.string.more_commands_summary)
     pluginKey == "PresenterPlugin" -> context.getString(R.string.more_presenter_summary)
     pluginKey == "DigitizerPlugin" -> context.getString(R.string.more_digitizer_summary)
     pluginKey == "MousePadPlugin" && buttonIndex > 0 -> context.getString(R.string.more_tv_summary)
+    pluginKey == "MousePadPlugin" -> context.getString(R.string.more_remote_summary)
     else -> null
 }
 

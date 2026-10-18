@@ -108,6 +108,11 @@ fun HomeScreen(ui: DeviceUi?, refreshing: Boolean, pairError: String?, callbacks
             EmptyHome(Modifier.padding(padding), callbacks::openDevices)
             return@Scaffold
         }
+        // A TV: its remote, on one screen (and nothing else of the usual Home).
+        if (ui.paired && ui.isTv) {
+            ge.connect.tv.TvRemote(ui.id, ui.name, callbacks::openDevices, callbacks::openPreferences, Modifier.padding(padding))
+            return@Scaffold
+        }
         LazyColumn(
             // Clipped below the status bar rather than scrolling under it.
             modifier = Modifier.padding(top = padding.calculateTopPadding()),
@@ -132,8 +137,10 @@ fun HomeScreen(ui: DeviceUi?, refreshing: Boolean, pairError: String?, callbacks
                 )
                 item { ActionGrid(tiles, callbacks::runAction) }
             }
-            if (transfers.isNotEmpty()) {
-                item { RecentTransfers(transfers, callbacks::openTransfers) }
+            // This device's transfers; until there are a few, placeholders show what the section is for.
+            item {
+                val send = ui.actions.firstOrNull { it.icon == R.drawable.ms_upload_filled }
+                RecentTransfers(transfers.filter { it.deviceId == ui.id }, callbacks::openTransfers, onSend = send?.let { { callbacks.runAction(it) } })
             }
             if (ui.permissionRequests.isNotEmpty()) {
                 item { PermissionsCard(ui.permissionRequests.size) { showPermissions = true } }
@@ -219,7 +226,8 @@ private fun DeviceSwitcher(name: String, onClick: () -> Unit) {
 
 @Composable
 private fun StatusCard(ui: DeviceUi, refreshing: Boolean, callbacks: HomeCallbacks) {
-    val live = ui.paired && ui.reachable
+    // A TV's card is just its name: the remote below has its own connection (Janus on the TV needn't run).
+    val live = ui.paired && (ui.reachable || ui.isTv)
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(32.dp),
@@ -261,7 +269,7 @@ private fun StatusCard(ui: DeviceUi, refreshing: Boolean, callbacks: HomeCallbac
                 }
             }
             // Smaller picture of the computer with a status pill next to it.
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!ui.isTv) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 val art = ui.appearance.art
                 if (art != null) {
                     androidx.compose.foundation.Image(
@@ -305,7 +313,7 @@ private fun StatusCard(ui: DeviceUi, refreshing: Boolean, callbacks: HomeCallbac
                     }
                 }
             }
-            if (ui.paired && !ui.reachable) {
+            if (ui.paired && !ui.reachable && !ui.isTv) {
                 var showHelp by remember { mutableStateOf(false) }
                 // Where the controls sit when connected: try again, or see what to check.
                 Row(
@@ -410,7 +418,14 @@ private fun StatusPill(ui: DeviceUi, live: Boolean) {
             Box(
                 Modifier
                     .size(8.dp)
-                    .background(if (live) androidx.compose.ui.graphics.Color(0xFF5BD46F) else colors.outline, CircleShape),
+                    .background(
+                        when {
+                            live -> androidx.compose.ui.graphics.Color(0xFF5BD46F)
+                            ui.cloudConnected -> colors.primary
+                            else -> colors.outline
+                        },
+                        CircleShape,
+                    ),
             )
             Spacer(Modifier.width(8.dp))
             Text(
@@ -418,6 +433,7 @@ private fun StatusPill(ui: DeviceUi, live: Boolean) {
                     when {
                         !ui.paired -> R.string.pair_title_not_paired
                         ui.reachable -> R.string.home_connected
+                        ui.cloud -> R.string.home_via_cloud
                         else -> R.string.home_not_connected
                     }
                 ),
@@ -645,12 +661,19 @@ private fun MacControlButton(control: MacControl, state: ge.connect.sync.MacStat
 
 /** Blip-style strip of the latest sent and received items, with a link to the full feed. */
 @Composable
-private fun RecentTransfers(items: List<ge.connect.transfers.Transfers.Item>, onSeeAll: () -> Unit) {
+private fun RecentTransfers(items: List<ge.connect.transfers.Transfers.Item>, onSeeAll: () -> Unit, onSend: (() -> Unit)?) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SectionHeader(stringResource(R.string.transfers_recent), Modifier.weight(1f).padding(top = 0.dp))
             TextButton(onClick = onSeeAll) { Text(stringResource(R.string.transfers_see_all)) }
+        }
+        if (items.isEmpty()) {
+            Text(
+                stringResource(R.string.transfers_placeholder_hint),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 10.dp),
+            )
         }
         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(items.take(12).size, key = { items[it].id }) { index ->
@@ -665,9 +688,24 @@ private fun RecentTransfers(items: List<ge.connect.transfers.Transfers.Item>, on
                     compact = true,
                 )
             }
+            // Fill the row with placeholders until real transfers take their place.
+            val placeholders = (PLACEHOLDER_COUNT - items.size).coerceAtLeast(0)
+            items(placeholders, key = { "placeholder-$it" }) { index ->
+                ge.connect.transfers.TransferPlaceholder(
+                    PLACEHOLDER_ICONS[(items.size + index) % PLACEHOLDER_ICONS.size],
+                    Modifier
+                        .animateItem()
+                        .width(148.dp)
+                        .clip(RoundedCornerShape(28.dp))
+                        .then(if (onSend != null) Modifier.clickable(onClick = onSend) else Modifier),
+                )
+            }
         }
     }
 }
+
+private const val PLACEHOLDER_COUNT = 3
+private val PLACEHOLDER_ICONS = listOf(R.drawable.ms_image, R.drawable.ms_description, R.drawable.ms_link)
 
 /** Big tonal tiles, two per row; an odd last tile spans the full width. */
 @Composable

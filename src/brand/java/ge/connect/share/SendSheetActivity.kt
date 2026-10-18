@@ -60,6 +60,7 @@ import org.kde.kdeconnect.plugins.share.SharePlugin
 import org.kde.kdeconnect.ui.MainActivity
 import org.kde.kdeconnect_tp.R
 import java.io.File
+import kotlinx.coroutines.launch
 
 /**
  * Blip-style "send to this computer" sheet: photos and videos, files, camera. Each opens
@@ -71,8 +72,16 @@ class SendSheetActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // A panel over whatever is on screen, not an app opening: no window transition (from the widget One UI would
+        // play its "open app" zoom on the home screen); the sheet's own slide-up and scrim are the animation.
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        } else {
+            @Suppress("DEPRECATION") overridePendingTransition(0, 0)
+        }
         val device = intent.getStringExtra(MainActivity.EXTRA_DEVICE_ID)?.let { KdeConnect.getInstance().getDevice(it) }
-            ?.takeIf { it.isReachable && it.isPaired }
+            ?.takeIf { (it.isReachable && it.isPaired) || ge.connect.cloud.JanusCloud.canSend(it) }
             ?: run {
                 Toast.makeText(this, R.string.shortcut_not_connected, Toast.LENGTH_SHORT).show()
                 finish()
@@ -81,9 +90,17 @@ class SendSheetActivity : AppCompatActivity() {
         setContent {
             AppTheme {
                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                ModalBottomSheet(onDismissRequest = ::finish, sheetState = sheetState, containerColor = LocalAppSurfaces.current.background) {
+                val scope = androidx.compose.runtime.rememberCoroutineScope()
+                // Back and Done slide the sheet down before the window goes; the window itself has no animation.
+                val close: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { finish() } }
+                ModalBottomSheet(
+                    onDismissRequest = ::finish, sheetState = sheetState, containerColor = LocalAppSurfaces.current.background,
+                    scrimColor = Color.Transparent, // no dimming behind: just the sheet over what's on screen (owner)
+                    properties = androidx.compose.material3.ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+                ) {
+                    androidx.activity.compose.BackHandler(onBack = close)
                     AnimatedContent(sending, label = "send sheet") { since ->
-                        if (since != null) SendingContent(device, since, onDone = ::finish)
+                        if (since != null) SendingContent(device, since, onDone = close)
                         else Options(device) { uris -> send(device, uris) }
                     }
                 }
@@ -91,8 +108,32 @@ class SendSheetActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Opened again while it's still open (singleTop, e.g. the widget's Send files after leaving the sheet): the same
+     * sheet stays instead of a second one stacking on it; for another device it's shown for that one.
+     */
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        val wanted = intent.getStringExtra(MainActivity.EXTRA_DEVICE_ID)
+        if (wanted != this.intent.getStringExtra(MainActivity.EXTRA_DEVICE_ID) && sending == null) {
+            setIntent(intent)
+            recreate()
+        }
+    }
+
+    override fun finish() {
+        super.finish()
+        if (android.os.Build.VERSION.SDK_INT < 34) @Suppress("DEPRECATION") overridePendingTransition(0, 0)
+    }
+
     private fun send(device: Device, uris: List<Uri>) {
         if (uris.isEmpty()) return
+        if (ge.connect.cloud.JanusCloud.useCloud(device)) {
+            // Not on the same network: through Janus Cloud (R36).
+            sending = System.currentTimeMillis()
+            Thread { ge.connect.cloud.CloudTransfers.send(device, uris) }.start()
+            return
+        }
         val plugin = device.getPlugin(SharePlugin::class.java) ?: return
         sending = System.currentTimeMillis()
         // Reads the files right away, while we still hold the pickers' read permission.

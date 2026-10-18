@@ -262,6 +262,7 @@ class SharePlugin : Plugin() {
     }
 
     fun sendText(text: String) {
+        ge.connect.sync.ClipboardGuard.sent(text) // ge.connect: the Mac copies it; not shown again when it comes back
         val np = NetworkPacket(PACKET_TYPE_SHARE_REQUEST)
         np["text"] = text
         device.sendPacket(np)

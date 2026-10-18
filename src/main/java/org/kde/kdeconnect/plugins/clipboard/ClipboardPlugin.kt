@@ -43,7 +43,10 @@ class ClipboardPlugin : Plugin() {
         val content = np.getString("content")
         when (np.type) {
             (PACKET_TYPE_CLIPBOARD) -> {
-                ClipboardListener.instance(context).setText(content)
+                // ge.connect: only what was really copied on the Mac (no echoes, clearing, repeats), see ClipboardGuard
+                if (ge.connect.sync.ClipboardGuard.accept(context, content, ClipboardListener.instance(context).currentContent, reconnect = false)) {
+                    ClipboardListener.instance(context).setText(content)
+                }
                 return true
             }
             (PACKET_TYPE_CLIPBOARD_CONNECT) -> {
@@ -52,7 +55,10 @@ class ClipboardPlugin : Plugin() {
                 if (packetTime == 0L || packetTime < ClipboardListener.instance(context).updateTimestamp) {
                     return false
                 }
-                if ("content" in np) { // change clipboard if content is in NetworkPacket
+                // ge.connect: on reconnection only a fresh copy not applied yet (the Mac re-sends its clipboard each time)
+                if ("content" in np && ge.connect.sync.ClipboardGuard.accept(
+                        context, content, ClipboardListener.instance(context).currentContent, reconnect = true, copiedAt = packetTime,
+                    )) { // change clipboard if content is in NetworkPacket
                     ClipboardListener.instance(context).setText(content)
                 }
                 return true
@@ -77,6 +83,7 @@ class ClipboardPlugin : Plugin() {
 
     @VisibleForTesting
     fun propagateClipboard(content: String) {
+        ge.connect.sync.ClipboardGuard.sent(content) // ge.connect: it comes back from the Mac's clipboard; not shown again
         val np = NetworkPacket(PACKET_TYPE_CLIPBOARD)
         np["content"] = content
         device.sendPacket(np)
@@ -92,6 +99,7 @@ class ClipboardPlugin : Plugin() {
         ) {
             return
         }
+        ge.connect.sync.ClipboardGuard.sent(content) // ge.connect
         val np = NetworkPacket(PACKET_TYPE_CLIPBOARD_CONNECT)
         val timestamp = ClipboardListener.instance(context).updateTimestamp
         np["timestamp"] = timestamp

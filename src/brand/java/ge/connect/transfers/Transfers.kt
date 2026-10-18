@@ -51,6 +51,10 @@ object Transfers {
         val bytesPerSecond: Long = 0,
         /** Sent to someone else's phone that asked its owner to accept (IncomingConsent); not done until they do. */
         val awaitingAccept: Boolean = false,
+        /** Went through Janus Cloud (R36) instead of the local network. */
+        val cloud: Boolean = false,
+        /** Sent through the cloud and waiting there until the computer picks it up. */
+        val awaitingDelivery: Boolean = false,
     ) {
         val active get() = state == State.WAITING || state == State.RUNNING || awaitingAccept
     }
@@ -142,12 +146,37 @@ object Transfers {
 
     fun incomingFailed(id: Long) = finish(id, State.FAILED)
 
+    // --- Janus Cloud (R36): files through the relay, both directions ---
+
+    fun cloudOutgoing(deviceId: String, deviceName: String, name: String, size: Long, mime: String?, uri: Uri): Long {
+        val id = nextId.incrementAndGet()
+        add(Item(id, Direction.OUT, Kind.FILE, deviceId, deviceName, name, size, mime, uri.toString(), thumbnail(id, uri, mime),
+            System.currentTimeMillis(), State.WAITING, cloud = true))
+        return id
+    }
+
+    fun cloudIncoming(deviceId: String, deviceName: String, name: String, size: Long, mime: String?): Long {
+        val id = nextId.incrementAndGet()
+        add(Item(id, Direction.IN, Kind.FILE, deviceId, deviceName, name, size, mime, null, null, System.currentTimeMillis(),
+            State.RUNNING, cloud = true))
+        return id
+    }
+
+    fun cloudProgress(id: Long, bytes: Long, total: Long) = progress(id, if (total > 0) bytes.toFloat() / total else 1f, bytes)
+
+    /** Uploaded; it waits in the cloud until the computer has it ([cloudDelivered]). */
+    fun cloudUploaded(id: Long) = finish(id, State.DONE) { it.copy(awaitingDelivery = true) }
+
+    fun cloudDelivered(id: Long) = set(id) { it.copy(awaitingDelivery = false) }
+
+    fun failed(id: Long) = finish(id, State.FAILED) { it.copy(awaitingDelivery = false) }
+
     // --- Links and text (both directions) ---
 
-    fun message(device: Device, direction: Direction, kind: Kind, content: String) {
+    fun message(device: Device, direction: Direction, kind: Kind, content: String, cloud: Boolean = false) {
         val id = nextId.incrementAndGet()
         add(Item(id, direction, kind, device.deviceId, device.name, content, content.length.toLong(), null, null, null,
-            System.currentTimeMillis(), State.DONE, progress = 1f))
+            System.currentTimeMillis(), State.DONE, progress = 1f, cloud = cloud))
         persist()
     }
 
@@ -216,6 +245,7 @@ object Transfers {
                 put("deviceId", i.deviceId); put("deviceName", i.deviceName); put("name", i.name)
                 put("size", i.size); put("mime", i.mime); put("uri", i.uri); put("thumb", i.thumb)
                 put("time", i.time); put("state", i.state.name)
+                if (i.cloud) put("cloud", true)
             }
         })
         runCatching { File(app.filesDir, FILE).writeText(json.toString()) }
@@ -235,6 +265,7 @@ object Transfers {
                 o.optString("uri").takeIf { it.isNotEmpty() && it != "null" },
                 o.optString("thumb").takeIf { it.isNotEmpty() && it != "null" },
                 o.getLong("time"), State.valueOf(o.getString("state")), progress = if (o.getString("state") == "DONE") 1f else 0f,
+                cloud = o.optBoolean("cloud"),
             )
         }
     }

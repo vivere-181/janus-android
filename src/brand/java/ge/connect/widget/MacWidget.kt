@@ -67,7 +67,6 @@ import ge.connect.transfers.Transfers
 import ge.connect.transfers.TransfersActivity
 import org.kde.kdeconnect.Device
 import org.kde.kdeconnect.KdeConnect
-import org.kde.kdeconnect.plugins.battery.BatteryPlugin
 import org.kde.kdeconnect.plugins.clipboard.ClipboardFloatingActivity
 import org.kde.kdeconnect.plugins.mousepad.MousePadActivity
 import org.kde.kdeconnect.plugins.mousepad.MousePadPlugin
@@ -80,11 +79,12 @@ import org.kde.kdeconnect_tp.R
 
 /**
  * Home-screen widget: the computer, its status and four quick actions (chosen per widget: long-press →
- * Customize). One widget that adapts to its size: 4×1 slim row, 2×2 grid, 4×2 tiles, 4×3+ with recent transfers.
+ * Customize). One widget that adapts to its size: 2×1 the Mac's card (battery ring), 4×1 that and the actions,
+ * 2×2 grid, 4×2 tiles, 4×3+ with recent transfers.
  * Material You colours; updated by events only (MacWidgetUpdates).
  */
 class MacWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(SLIM, SMALL, WIDE, TALL))
+    override val sizeMode = SizeMode.Responsive(setOf(SLIM_HALF, SLIM, SMALL, WIDE, TALL))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
@@ -97,6 +97,7 @@ class MacWidget : GlanceAppWidget() {
     }
 
     companion object {
+        private val SLIM_HALF = DpSize(110.dp, 48.dp)
         private val SLIM = DpSize(240.dp, 48.dp)
         private val SMALL = DpSize(110.dp, 110.dp)
         private val WIDE = DpSize(240.dp, 110.dp)
@@ -115,9 +116,37 @@ class MacCommandAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         val key = parameters[MacWidget.KEY] ?: return
         val device = parameters[MacWidget.KEY_DEVICE]?.let { KdeConnect.getInstance().getDevice(it) } ?: return
+        if (!device.isReachable && ge.connect.cloud.CloudCompanion.away(device)) {
+            MacState.started(device.deviceId, key)
+            ge.connect.cloud.CloudCompanion.action(device, key) // through Janus Cloud while the Mac is away (R37)
+            return
+        }
         val plugin = device.getPlugin(RunCommandPlugin::class.java) ?: return
         MacState.started(device.deviceId, key)
         plugin.runCommand(key)
+    }
+}
+
+/**
+ * Send files: the sheet opened by the app, without a transition, rather than by the launcher (One UI zooms the whole
+ * home screen away for launches from its widgets, as for an app). The widget click lets the app start it.
+ */
+class SendFilesAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val deviceId = parameters[MacWidget.KEY_DEVICE] ?: return
+        val intent = ge.connect.share.SendSheetActivity.intent(context, deviceId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val options = android.app.ActivityOptions.makeCustomAnimation(context, 0, 0)
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            options.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+        }
+        context.startActivity(intent, options.toBundle())
+    }
+}
+
+/** "Try again" on an offline widget: look for the computer now. */
+class RefreshAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        org.kde.kdeconnect.BackgroundService.ForceRefreshConnections(context)
     }
 }
 
@@ -160,6 +189,12 @@ private data class WidgetData(
     val isPhone: Boolean = false,
     val peer: PeerState.Peer = PeerState.Peer(),
     val icon: Int = R.drawable.ms_laptop_mac_filled,
+    /** When it was last connected, if it isn't now. */
+    val lastSeen: Long? = null,
+    /** What the Mac said it is ("MacBook Pro", R28): shorter than its name for the small layouts. */
+    val model: String? = null,
+    /** Not connected, but reachable through Janus Cloud. */
+    val cloud: Boolean = false,
 ) {
     companion object {
         /** The widget's own device (Customize), else the app's selected one, else a connected one, else any paired one. */
@@ -178,9 +213,13 @@ private data class WidgetData(
             val isPhone = PeerState.isPhone(device)
             val actions = WidgetAction.forWidget(context, appWidgetId, isPhone)
             val connected = device.isReachable
-            val battery = if (connected) device.getPlugin(BatteryPlugin::class.java)?.remoteBatteryInfo else null
+            val battery = if (connected) LastBattery.of(context, device.deviceId, ge.connect.sync.MacState.battery(device)) else null
+            // Away from the local network but linked through Janus Cloud: files, the clipboard and the Mac's actions work.
+            val cloud = !connected && ge.connect.cloud.CloudCompanion.away(device) &&
+                ge.connect.cloud.JanusCloud.link.value == ge.connect.cloud.JanusCloud.Link.CONNECTED
             val commands = if (connected) device.getPlugin(RunCommandPlugin::class.java)
-                ?.let { plugin -> GeRunCommands.commands(plugin).map { it.first }.toSet() }.orEmpty() else emptySet()
+                ?.let { plugin -> GeRunCommands.commands(plugin).map { it.first }.toSet() }.orEmpty()
+            else if (cloud) rememberedCommands(context, device.deviceId) else emptySet()
             val plugins = if (connected) listOfNotNull(
                 "mousepad".takeIf { device.getPlugin(MousePadPlugin::class.java) != null },
                 "presenter".takeIf { device.getPlugin(PresenterPlugin::class.java) != null },
@@ -190,8 +229,8 @@ private data class WidgetData(
                 deviceId = device.deviceId,
                 name = device.name,
                 connected = connected,
-                battery = battery?.currentCharge,
-                charging = battery?.isCharging == true,
+                battery = battery?.first,
+                charging = battery?.second == true,
                 art = DeviceAppearance.of(context, device).art,
                 commands = commands,
                 plugins = plugins,
@@ -201,10 +240,42 @@ private data class WidgetData(
                 isPhone = isPhone,
                 peer = PeerState.of(device.deviceId),
                 icon = with(ge.connect.home.DeviceModelIcons) { device.deviceType.filledIcon },
+                model = ge.connect.sync.MacInfo.market(context, device.deviceId),
+                cloud = cloud,
+                lastSeen = if (connected) null else ge.connect.connection.ConnectionHistory.events(context, device.deviceId)
+                    .firstOrNull { !it.connected }?.time,
             )
         }
     }
 }
+
+/**
+ * The computer's battery as last reported. It reports only when the level changes, and after a reconnection Janus
+ * starts without it (the plugins are reloaded), so a Mac at 100 % on its charger could stay unknown for hours.
+ */
+private object LastBattery {
+    private const val PREFS = "ge_connect_widget_battery"
+
+    /** (level, charging): [current] if there is one (remembered), else the last one known. */
+    fun of(context: Context, deviceId: String, current: org.kde.kdeconnect.plugins.battery.DeviceBatteryInfo?): Pair<Int, Boolean>? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val level = current?.currentCharge?.takeIf { it in 0..100 }
+        if (level != null) {
+            if (prefs.getInt("$deviceId/level", -1) != level || prefs.getBoolean("$deviceId/charging", false) != current.isCharging) {
+                prefs.edit().putInt("$deviceId/level", level).putBoolean("$deviceId/charging", current.isCharging).apply()
+            }
+            return level to current.isCharging
+        }
+        val last = prefs.getInt("$deviceId/level", -1).takeIf { it >= 0 } ?: return null
+        return last to prefs.getBoolean("$deviceId/charging", false)
+    }
+}
+
+/** The Mac's actions as Home remembered them from the last connection (for Janus Cloud while it's away). */
+private fun rememberedCommands(context: Context, deviceId: String): Set<String> = runCatching {
+    val array = org.json.JSONArray(context.getSharedPreferences("ge_connect_mac_controls", Context.MODE_PRIVATE).getString(deviceId, "[]"))
+    (0 until array.length()).map { array.getJSONArray(it).getString(0) }.toSet()
+}.getOrDefault(emptySet())
 
 private class Tile(val label: String, val icon: Int, val action: Action, val look: Look = Look.Normal) {
     enum class Look { Normal, On, Alert, Working, Done, Failed, Disabled }
@@ -221,11 +292,12 @@ private fun Content(context: Context, data: WidgetData) {
         GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(if (size.height < 110.dp) WIDGET else GlanceTheme.colors.widgetBackground)
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
-            .padding(if (size.height < 110.dp) 10.dp else 14.dp),
+            .padding(if (size.height < 110.dp) 8.dp else 14.dp),
     ) {
         when {
+            size.height < 110.dp && size.width < 240.dp -> SlimHalf(context, data, openApp)
             size.height < 110.dp -> Slim(context, data, tiles, openApp)
             size.width < 240.dp -> {
                 Header(context, data, showArt = false, openApp)
@@ -248,30 +320,187 @@ private fun Content(context: Context, data: WidgetData) {
     }
 }
 
-/** 4×1: picture, name and status, then round icon buttons. */
+/**
+ * 4×1: the Mac in an inner card ("well": its tile in a battery ring, level and state; tap: the app), then its actions.
+ * Through Janus Cloud: a blue ring and the cloud; offline: a dashed ring and Try again instead of the actions.
+ */
 @Composable
 private fun Slim(context: Context, data: WidgetData, tiles: List<Tile>, openApp: Action) {
     Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-        Row(GlanceModifier.defaultWeight().clickable(openApp), verticalAlignment = Alignment.CenterVertically) {
-            DeviceArt(data, GlanceModifier.size(42.dp, 28.dp))
-            Spacer(GlanceModifier.width(10.dp))
-            Column {
-                Text(
-                    data.name ?: context.getString(R.string.app_name), maxLines = 1,
-                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                )
-                StatusLine(context, data, 12.sp)
+        MacWell(context, data, GlanceModifier.fillMaxHeight().clickable(openApp))
+        Spacer(GlanceModifier.width(8.dp))
+        Row(GlanceModifier.defaultWeight().height(56.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!data.connected && !data.cloud) {
+                Row(
+                    GlanceModifier.fillMaxSize().background(BUTTON).cornerRadius(16.dp).clickable(
+                        if (data.deviceId == null) openApp else actionRunCallback<RefreshAction>()
+                    ),
+                    verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(ImageProvider(R.drawable.ms_refresh), null, GlanceModifier.size(20.dp), colorFilter = ColorFilter.tint(ON_BUTTON))
+                    Spacer(GlanceModifier.width(8.dp))
+                    Text(
+                        context.getString(if (data.deviceId == null) R.string.widget_set_up else R.string.widget_try_again), maxLines = 1,
+                        style = TextStyle(color = ON_BUTTON, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
+                }
+                return@Row
+            }
+            tiles.forEachIndexed { i, tile ->
+                if (i > 0) Spacer(GlanceModifier.width(6.dp))
+                val (background, tint) = buttonColors(tile.look)
+                Box(
+                    GlanceModifier.defaultWeight().fillMaxHeight().background(background).cornerRadius(16.dp).clickable(tile.action),
+                    contentAlignment = Alignment.Center,
+                ) { TileIcon(tile, tint, 22.dp) }
             }
         }
-        tiles.forEach { tile ->
-            Spacer(GlanceModifier.width(6.dp))
-            val (background, tint) = tileColors(tile.look)
-            Box(
-                GlanceModifier.size(40.dp).background(background).cornerRadius(20.dp).clickable(tile.action),
-                contentAlignment = Alignment.Center,
-            ) { TileIcon(tile, tint, 20.dp) }
+    }
+}
+
+/** 2×1: just the Mac's card; tap: the app. */
+@Composable
+private fun SlimHalf(context: Context, data: WidgetData, openApp: Action) {
+    MacWell(context, data, GlanceModifier.fillMaxSize().clickable(openApp))
+}
+
+/** The Mac's card: its tile in the battery ring, then the level (or Via Cloud / Offline) and what it's doing. */
+@Composable
+private fun MacWell(context: Context, data: WidgetData, modifier: GlanceModifier) {
+    Row(modifier.background(WELL).cornerRadius(22.dp).padding(start = 8.dp, end = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        val level = data.battery?.takeIf { data.connected }
+        val state = when { data.connected -> RingState.LIVE; data.cloud -> RingState.CLOUD; else -> RingState.OFFLINE }
+        val ring = remember(level, state) { ringBitmap(context, level, state) }
+        val dim = state == RingState.OFFLINE
+        Box(GlanceModifier.size(50.dp), contentAlignment = Alignment.Center) {
+            Image(ImageProvider(ring), null, GlanceModifier.fillMaxSize())
+            Box(GlanceModifier.size(38.dp).background(if (dim) TILE_OFF else TILE).cornerRadius(12.dp), contentAlignment = Alignment.Center) {
+                Image(
+                    ImageProvider(when {
+                        state == RingState.CLOUD -> R.drawable.ms_cloud
+                        data.icon == R.drawable.ms_desktop_windows_filled -> R.drawable.ms_desktop_windows
+                        else -> R.drawable.ms_laptop_mac
+                    }),
+                    data.name, GlanceModifier.size(21.dp), colorFilter = ColorFilter.tint(if (dim) ON_TILE_OFF else ON_TILE),
+                )
+            }
+        }
+        Spacer(GlanceModifier.width(10.dp))
+        Column {
+            Text(
+                when {
+                    level != null -> "$level%"
+                    state == RingState.CLOUD -> context.getString(R.string.widget_via_cloud)
+                    data.connected -> "–%" // not reported yet: the same width as a level, so the buttons don't move
+                    else -> context.getString(R.string.widget_offline)
+                },
+                maxLines = 1,
+                style = TextStyle(
+                    color = if (dim) GlanceTheme.colors.onSurfaceVariant else GlanceTheme.colors.onSurface,
+                    fontSize = if (data.connected) 21.sp else 16.sp, fontWeight = FontWeight.Medium,
+                ),
+            )
+            Text(macState(context, data), maxLines = 1, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp))
         }
     }
+}
+
+/** Under the level: Locked / Charging / Connected; through the cloud, why; offline, when it was last seen. */
+private fun macState(context: Context, data: WidgetData): String {
+    if (data.deviceId == null) return context.getString(R.string.widget_set_up)
+    if (data.cloud) return context.getString(R.string.widget_not_on_wifi)
+    if (!data.connected) {
+        val seen = data.lastSeen ?: return data.model ?: data.name.orEmpty()
+        val now = System.currentTimeMillis()
+        val ago = if (now - seen < android.text.format.DateUtils.MINUTE_IN_MILLIS) context.getString(R.string.widget_just_now)
+        else android.text.format.DateUtils.getRelativeTimeSpanString(seen, now, android.text.format.DateUtils.MINUTE_IN_MILLIS,
+            android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE).toString()
+        return context.getString(R.string.home_last_seen, ago)
+    }
+    return context.getString(when {
+        data.mac.locked -> R.string.mac_locked
+        data.charging -> R.string.widget_charging
+        else -> R.string.home_connected
+    })
+}
+
+private enum class RingState { LIVE, CLOUD, OFFLINE }
+
+/**
+ * The battery ring around the tile, as a bitmap (widgets can't draw it): a rounded square from the top centre,
+ * clockwise, as long as the level; green, amber at 30 %, red at 15 %; a full blue ring through the cloud (no level
+ * there); dashed grey when offline.
+ */
+private fun ringBitmap(context: Context, level: Int?, state: RingState): Bitmap {
+    val density = context.resources.displayMetrics.density.coerceAtMost(3f)
+    val px = (50 * density).toInt()
+    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    val stroke = 3 * density
+    val inset = stroke / 2
+    val path = android.graphics.Path().apply {
+        // Starts at the top centre so the level grows clockwise from there.
+        val r = 18 * density - inset
+        val rect = android.graphics.RectF(inset, inset, px - inset, px - inset)
+        moveTo(rect.centerX(), rect.top)
+        lineTo(rect.right - r, rect.top); arcTo(rect.right - 2 * r, rect.top, rect.right, rect.top + 2 * r, -90f, 90f, false)
+        lineTo(rect.right, rect.bottom - r); arcTo(rect.right - 2 * r, rect.bottom - 2 * r, rect.right, rect.bottom, 0f, 90f, false)
+        lineTo(rect.left + r, rect.bottom); arcTo(rect.left, rect.bottom - 2 * r, rect.left + 2 * r, rect.bottom, 90f, 90f, false)
+        lineTo(rect.left, rect.top + r); arcTo(rect.left, rect.top, rect.left + 2 * r, rect.top + 2 * r, 180f, 90f, false)
+        close()
+    }
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE
+        strokeWidth = stroke
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    when (state) {
+        RingState.OFFLINE -> {
+            paint.color = 0xFF8A93A8.toInt()
+            paint.pathEffect = android.graphics.DashPathEffect(floatArrayOf(stroke * 1.8f, stroke * 1.6f), 0f)
+            canvas.drawPath(path, paint)
+        }
+        RingState.CLOUD -> {
+            paint.color = 0xFF5FA8FF.toInt()
+            canvas.drawPath(path, paint)
+        }
+        RingState.LIVE -> {
+            paint.color = 0x33808A9E
+            canvas.drawPath(path, paint)
+            val value = level?.coerceIn(0, 100) ?: return bitmap // no level yet: just the track
+            paint.color = when {
+                value <= 15 -> 0xFFE5484D.toInt()
+                value <= 30 -> 0xFFE8A317.toInt()
+                else -> 0xFF2EB85C.toInt()
+            }
+            val measure = android.graphics.PathMeasure(path, false)
+            val done = android.graphics.Path()
+            measure.getSegment(0f, measure.length * value / 100f, done, true)
+            canvas.drawPath(done, paint)
+        }
+    }
+    return bitmap
+}
+
+// The 4×1 and 2×1 look (Material You, Janus's colours), light and dark: the widget, its inner cards, the tile, buttons.
+private val WIDGET = androidx.glance.color.ColorProvider(day = Color(0xFFD3E4FF), night = Color(0xFF1F2A3D))
+private val WELL = androidx.glance.color.ColorProvider(day = Color(0xFFE9F0FF), night = Color(0xFF172133))
+private val TILE = androidx.glance.color.ColorProvider(day = Color(0xFF1B4684), night = Color(0xFFA8C8FC))
+private val ON_TILE = androidx.glance.color.ColorProvider(day = Color(0xFFD3E4FF), night = Color(0xFF023063))
+private val TILE_OFF = androidx.glance.color.ColorProvider(day = Color(0xFFC9D5EA), night = Color(0xFF2E3A50))
+private val ON_TILE_OFF = androidx.glance.color.ColorProvider(day = Color(0xFF5B6B85), night = Color(0xFF8A93A8))
+private val BUTTON = androidx.glance.color.ColorProvider(day = Color(0xFFA8C8FC), night = Color(0xFF38475F))
+private val ON_BUTTON = androidx.glance.color.ColorProvider(day = Color(0xFF001B3D), night = Color(0xFFD5E3FF))
+private val BUTTON_ON = androidx.glance.color.ColorProvider(day = Color(0xFF1B4684), night = Color(0xFFA8C8FC))
+private val ON_BUTTON_ON = androidx.glance.color.ColorProvider(day = Color(0xFFFFFFFF), night = Color(0xFF023063))
+private val BUTTON_OFF = androidx.glance.color.ColorProvider(day = Color(0x66A8C8FC), night = Color(0x6638475F))
+
+@Composable
+private fun buttonColors(look: Tile.Look): Pair<ColorProvider, ColorProvider> = when (look) {
+    Tile.Look.Normal, Tile.Look.Working, Tile.Look.Done -> BUTTON to ON_BUTTON
+    Tile.Look.On -> BUTTON_ON to ON_BUTTON_ON
+    Tile.Look.Disabled -> BUTTON_OFF to GlanceTheme.colors.outline
+    else -> tileColors(look)
 }
 
 @Composable
@@ -455,14 +684,18 @@ private fun loadThumb(path: String): Bitmap? = runCatching {
 // Tiles --------------------------------------------------------------------------------------------------------------
 
 private fun tile(context: Context, data: WidgetData, action: WidgetAction, openApp: Action): Tile {
+    fun sendFiles(deviceId: String) = Tile(
+        context.getString(action.label), action.icon, actionRunCallback<SendFilesAction>(actionParametersOf(MacWidget.KEY_DEVICE to deviceId)),
+    )
     val deviceId = data.deviceId
     val live = data.connected && deviceId != null
+    val cloud = data.cloud && deviceId != null
     val label = context.getString(action.label)
     fun disabled() = Tile(label, action.icon, openApp, Tile.Look.Disabled)
     fun open(intent: Intent) = Tile(label, action.icon, actionStartActivity(intent))
     val command = action.command
     if (command != null) {
-        if (!live || command !in data.commands) return disabled()
+        if (!(live || cloud) || command !in data.commands) return disabled()
         val progress = data.mac.progress[command.removePrefix("ge-")]
         val (on, onLabel, onLook) = when (action) {
             WidgetAction.LOCK -> Triple(data.mac.locked, R.string.mac_locked, Tile.Look.On)
@@ -484,6 +717,11 @@ private fun tile(context: Context, data: WidgetData, action: WidgetAction, openA
             actionRunCallback<MacCommandAction>(actionParametersOf(MacWidget.KEY to command, MacWidget.KEY_DEVICE to deviceId!!)), look,
         )
     }
+    if (cloud) return when (action) {
+        WidgetAction.SEND_FILES -> sendFiles(deviceId!!)
+        WidgetAction.CLIPBOARD -> open(ClipboardFloatingActivity.getCloudIntent(context, deviceId!!))
+        else -> disabled()
+    }
     if (!live) return disabled()
     if (action.forPhone == true) {
         if (!data.isPhone) return disabled()
@@ -502,7 +740,7 @@ private fun tile(context: Context, data: WidgetData, action: WidgetAction, openA
         }
     }
     return when (action) {
-        WidgetAction.SEND_FILES -> open(ge.connect.share.SendSheetActivity.intent(context, deviceId!!))
+        WidgetAction.SEND_FILES -> sendFiles(deviceId!!)
         // Its own task (manifest), so reading the clipboard doesn't bring the app to the front; a toast confirms.
         WidgetAction.CLIPBOARD -> open(ClipboardFloatingActivity.getIntent(context, true))
         WidgetAction.REMOTE -> if ("mousepad" in data.plugins) open(Intent(context, MousePadActivity::class.java).putExtra("deviceId", deviceId)) else disabled()

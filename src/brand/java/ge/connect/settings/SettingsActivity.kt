@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -104,6 +105,8 @@ class SettingsActivity : AppCompatActivity() {
             if (granted) { ge.connect.sync.ScreenshotSync.setEnabled(context, true); screenshots = true }
         }
         var keepWirelessDebugging by remember { mutableStateOf(ge.connect.sync.Mirroring.keepOn(context)) }
+        val cloudPeers by ge.connect.cloud.JanusCloud.peers.collectAsState()
+        val cloudLink by ge.connect.cloud.JanusCloud.link.collectAsState()
         var bluetooth by remember { mutableStateOf(prefs.getBoolean(SettingsFragment.KEY_BLUETOOTH_ENABLED, false)) }
         var phoneName by remember { mutableStateOf(DeviceHelper.getDeviceName(context)) }
         var theme by remember { mutableStateOf(prefs.getString(SettingsFragment.KEY_APP_THEME, ThemeUtil.DEFAULT_MODE)!!) }
@@ -149,9 +152,11 @@ class SettingsActivity : AppCompatActivity() {
             },
         ) { padding ->
             LazyColumn(
+                // Below the title bar rather than under it: overlapping, a TV remote's focus can't leave the bar.
+                modifier = Modifier.padding(top = padding.calculateTopPadding()),
                 contentPadding = PaddingValues(
                     start = 16.dp, end = 16.dp,
-                    top = padding.calculateTopPadding(),
+                    top = 0.dp,
                     bottom = padding.calculateBottomPadding() + 24.dp,
                 ),
             ) {
@@ -242,6 +247,10 @@ class SettingsActivity : AppCompatActivity() {
                 item {
                     SectionHeader(stringResource(R.string.settings_section_network))
                     ListGroup(listOf(
+                        { s -> NavRow(
+                            s, R.drawable.ms_cloud, stringResource(R.string.cloud_title),
+                            stringResource(CloudActivity.statusTitle(cloudPeers, cloudLink)),
+                        ) { startActivity(CloudActivity.intent(context)) } },
                         { s -> NavRow(s, R.drawable.ms_wifi, stringResource(R.string.trusted_networks), stringResource(R.string.trusted_networks_desc)) {
                             trustedNetworks.launch(Intent(context, TrustedNetworksActivity::class.java))
                         } },

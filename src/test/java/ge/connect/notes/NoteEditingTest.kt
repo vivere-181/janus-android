@@ -191,3 +191,16 @@ class NoteTabTest {
 
     @Test fun tabNestsListItem() = assertEquals("\t- a", NoteEditing.apply("- a", 3, "- a\t", 4).text)
 }
+
+class NotePreviewStylesTest {
+    @Test fun styledRanges() {
+        val (text, styles) = NoteMarkdown.styled("a **bold** and *it* ~~x~~")
+        assertEquals("a bold and it x", text)
+        assertEquals(listOf("BOLD" to "bold", "ITALIC" to "it", "STRIKE" to "x"), styles.map { it.style.name to text.substring(it.start, it.end) })
+    }
+
+    @Test fun blankLinesKept() {
+        val lines = NoteMarkdown.preview("Title\nOne\n\n\nTwo\n\n", keepBlank = true)
+        assertEquals(listOf("BODY", "BLANK", "BODY"), lines.map { it.kind.name })
+    }
+}

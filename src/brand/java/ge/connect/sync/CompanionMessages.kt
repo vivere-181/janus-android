@@ -33,6 +33,11 @@ object CompanionMessages {
      */
     fun sendStatusNotification(context: Context, device: Device, idPrefix: String, title: String, text: String, silent: Boolean): Boolean {
         val id = idPrefix + UUID.randomUUID()
+        // R37: a Mac that's away gets it through Janus Cloud (only the kinds §13 lists).
+        if (!device.isReachable) {
+            return ge.connect.cloud.CloudCompanion.carries(idPrefix) && ge.connect.cloud.CloudCompanion.away(device) &&
+                ge.connect.cloud.CloudCompanion.send(device, id, text)
+        }
         val sent = device.sendPacketBlocking(NetworkPacket("kdeconnect.notification").apply {
             this["id"] = id
             this["appName"] = context.getString(R.string.app_name)
@@ -81,6 +86,8 @@ object CompanionMessages {
             command.startsWith("call:") -> CallCommands.call(context, device, command.removePrefix("call:"))
             command == "calendar:refresh" -> CalendarSync.refresh(device) // R26
             command.startsWith("notes:") -> ge.connect.notes.NotesSync.handle(device, command.removePrefix("notes:")) // R29
+            command == "findmyphone" -> ge.connect.cloud.CloudRinger.toggle(context, device) // R37: Find My Phone through the cloud
+            command.startsWith("cloud:") -> ge.connect.cloud.JanusCloud.handle(device, command.removePrefix("cloud:")) // R36
             command.startsWith("mirror:") -> Mirroring.handleCommand(context, device, command.removePrefix("mirror:")) // R25
             else -> Log.i(TAG, "Ignoring unknown command from ${device.name}: $message")
         }

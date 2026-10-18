@@ -40,6 +40,12 @@ import org.kde.kdeconnect_tp.R;
 public class ClipboardFloatingActivity extends AppCompatActivity {
 
     private static final String KEY_SHOW_TOAST = "SHOW_TOAST";
+    private static final String KEY_CLOUD_DEVICE = "CLOUD_DEVICE"; // ge.connect
+
+    /** ge.connect: for a Mac that's away, the clipboard goes to it through Janus Cloud (R37). */
+    public static Intent getCloudIntent(Context context, String deviceId) {
+        return getIntent(context, true).putExtra(KEY_CLOUD_DEVICE, deviceId);
+    }
 
     public static Intent getIntent(Context context, boolean showToast) {
         Intent startIntent = new Intent(context.getApplicationContext(), ClipboardFloatingActivity.class);
@@ -52,6 +58,12 @@ public class ClipboardFloatingActivity extends AppCompatActivity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
+            String cloudDevice = getIntent().getStringExtra(KEY_CLOUD_DEVICE);
+            if (cloudDevice != null) { // ge.connect: through Janus Cloud
+                sendThroughCloud(cloudDevice);
+                finish();
+                return;
+            }
             // We are now sure that clipboard can be accessed from here.
             ClipboardListener.instance(this).onClipboardChanged(true); // ge.connect: explicit send, even if unchanged
             if (shouldShowToast()) {
@@ -71,6 +83,20 @@ public class ClipboardFloatingActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 
         getWindow().setAttributes(wlp);
+    }
+
+    // ge.connect: the clipboard as text to an away Mac (Home's "Send clipboard" does the same).
+    private void sendThroughCloud(String deviceId) {
+        org.kde.kdeconnect.Device device = org.kde.kdeconnect.KdeConnect.getInstance().getDevice(deviceId);
+        android.content.ClipboardManager clipboard = getSystemService(android.content.ClipboardManager.class);
+        android.content.ClipData clip = clipboard != null ? clipboard.getPrimaryClip() : null;
+        CharSequence text = clip != null && clip.getItemCount() > 0 ? clip.getItemAt(0).coerceToText(this) : null;
+        if (device == null || text == null || text.toString().trim().isEmpty()) {
+            Toast.makeText(this, R.string.cloud_clipboard_empty, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ge.connect.cloud.CloudCompanion.INSTANCE.sendText(device, text.toString(), false);
+        Toast.makeText(this, getString(R.string.share_sent, device.getName()), Toast.LENGTH_SHORT).show();
     }
 
     private boolean shouldShowToast() {

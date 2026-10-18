@@ -61,6 +61,9 @@ object MacWidgetUpdates {
             KdeConnect.getInstance().devices.values.forEach(::watchCommands)
             request()
         }
+        // Janus Cloud up or down: an away Mac shows as "Via Cloud" or offline.
+        scope.launch { ge.connect.cloud.JanusCloud.link.map { it == ge.connect.cloud.JanusCloud.Link.CONNECTED }.distinctUntilChanged().collect { request() } }
+        scope.launch { ge.connect.cloud.JanusCloud.peers.collect { request() } }
         // Finished transfers feed the 4×3 "Recent" strip (progress ticks don't matter here).
         scope.launch {
             ge.connect.transfers.Transfers.items
@@ -77,7 +80,7 @@ object MacWidgetUpdates {
         synchronized(this) {
             pending?.cancel()
             pending = scope.launch {
-                delay(300)
+                delay(800) // a connection change comes as a burst of events: one redraw
                 changes.value = changes.value + 1
                 runCatching { MacWidget().updateAll(app) } // starts a composition if none is running
             }

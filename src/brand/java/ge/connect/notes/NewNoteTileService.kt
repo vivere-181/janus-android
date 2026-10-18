@@ -19,7 +19,7 @@ class NewNoteTileService : TileService() {
 
     override fun onClick() {
         TileServiceCompat.startActivityAndCollapse(
-            this, PendingIntentActivityWrapper(this, 0, NoteEditorActivity.newNoteIntent(this), PendingIntent.FLAG_UPDATE_CURRENT, false),
+            this, PendingIntentActivityWrapper(this, 0, NoteEditorActivity.newNoteExternalIntent(this), PendingIntent.FLAG_UPDATE_CURRENT, false),
         )
     }
 }

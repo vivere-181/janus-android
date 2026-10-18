@@ -19,7 +19,6 @@ import ge.connect.home.SelectedDevice
 import ge.connect.home.symbol
 import org.kde.kdeconnect.Device
 import org.kde.kdeconnect.KdeConnect
-import org.kde.kdeconnect.plugins.battery.BatteryPlugin
 import org.kde.kdeconnect.plugins.mousepad.MousePadActivity
 import org.kde.kdeconnect.ui.MainActivity
 import org.kde.kdeconnect_tp.R
@@ -76,7 +75,7 @@ class StatusTileService : DeviceTileService() {
         tile.icon = Icon.createWithResource(this, remembered?.symbol ?: R.drawable.ms_laptop_mac)
         tile.state = if (device != null) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val battery = device?.getPlugin(BatteryPlugin::class.java)?.remoteBatteryInfo
+            val battery = device?.let(ge.connect.sync.MacState::battery)
             tile.subtitle = when {
                 device == null -> getString(R.string.home_not_connected)
                 battery != null -> getString(R.string.tile_connected_battery, battery.currentCharge)

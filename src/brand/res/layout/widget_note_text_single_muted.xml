@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ge.connect: a note line on a widget, as a plain TextView so inline styles (spans) show. Day/night colour from colors_janus. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/note_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textColor="@color/janus_on_surface_variant"
+    android:textSize="14sp"
+    android:lineSpacingMultiplier="1.12"
+    android:maxLines="1"
+    android:ellipsize="end" />

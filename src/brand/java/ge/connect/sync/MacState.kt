@@ -32,6 +32,11 @@ object MacState {
         val locked: Boolean = false,
         /** Set when the Mac confirms "sleep"; cleared by its next state report (it sends one when it reconnects). */
         val asleep: Boolean = false,
+        /**
+         * The Mac's battery as macOS reports it (level, charging), when the Mac sends it. Preferred over KDE's
+         * kdeconnect.battery, whose macOS reading can be wrong (50 % on a full Mac: an empty second battery averaged in).
+         */
+        val battery: Pair<Int, Boolean>? = null,
         /** Action key without "ge-" → progress; DONE/FAILED clear themselves after a moment. */
         val progress: Map<String, Progress> = emptyMap(),
     )
@@ -59,6 +64,11 @@ object MacState {
 
     fun of(deviceId: String): State = _states.value[deviceId] ?: State()
 
+    /** A computer's battery: the Mac's own report if it sent one, else KDE's. */
+    fun battery(device: org.kde.kdeconnect.Device): org.kde.kdeconnect.plugins.battery.DeviceBatteryInfo? =
+        of(device.deviceId).battery?.let { (level, charging) -> org.kde.kdeconnect.plugins.battery.DeviceBatteryInfo(level, charging, 0) }
+            ?: device.getPlugin(org.kde.kdeconnect.plugins.battery.BatteryPlugin::class.java)?.remoteBatteryInfo
+
     /** The phone just asked the Mac to run an action (key with or without "ge-"). */
     fun started(deviceId: String, key: String) {
         val action = key.removePrefix("ge-")
@@ -83,6 +93,8 @@ object MacState {
                         muted = when (values["muted"]) { "on" -> Muted.ON; "off" -> Muted.OFF; "na" -> Muted.NA; else -> state.muted },
                         finding = values["finding"]?.let { it == "on" } ?: state.finding,
                         locked = values["locked"]?.let { it == "on" } ?: state.locked,
+                        battery = values["battery"]?.toIntOrNull()?.takeIf { it in 0..100 }
+                            ?.let { it to (values["charging"] == "on") } ?: state.battery,
                         asleep = false,
                     )
                 }

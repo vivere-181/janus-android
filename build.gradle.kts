@@ -54,6 +54,9 @@ android {
 
     sourceSets.getByName("main") {
         res.directories += licenseResDir
+        // ge.connect: AirPlay receiving on a TV (src/airplay/README.md): the receiver's prebuilt engine and its Kotlin side.
+        jniLibs.directories += "src/airplay/jniLibs"
+        kotlin.directories += "src/airplay/java"
     }
     // Branding overlay: build-type source sets override main, so src/brand/res replaces
     // upstream strings/drawables without editing upstream files (keeps merges clean).
@@ -80,6 +83,8 @@ android {
         resources {
             merges += listOf("META-INF/DEPENDENCIES", "META-INF/LICENSE", "META-INF/LICENSE.md", "META-INF/NOTICE")
         }
+        // ge.connect: native libraries compressed in the APK (the AirPlay receiver's are big, and only TVs use them).
+        jniLibs { useLegacyPackaging = true }
     }
     signingConfigs {
         getByName("debug") {
@@ -338,6 +343,7 @@ dependencies {
     implementation(libs.commons.lang3)
 
     implementation(libs.univocity.parsers)
+    implementation(libs.okhttp) // ge.connect: Janus Cloud relay (HTTP/2 + WebSocket, R36)
 
     // Kotlin
     implementation(libs.kotlin.stdlib.jdk8)

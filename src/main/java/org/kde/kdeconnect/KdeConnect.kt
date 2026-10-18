@@ -77,6 +77,16 @@ class KdeConnect : Application() {
         ge.connect.notes.NotesStore.start(this)
         ge.connect.notes.NotesSync.start(this)
         ge.connect.notes.NoteAttachments.start(this)
+        ge.connect.cloud.JanusCloud.start(this) // ge.connect: Janus Cloud, transfers when not on the same network (R36)
+        ge.connect.airplay.AirPlayReceiver.start(this) // ge.connect: on a TV, AirPlay screen mirroring (R38)
+        // ge.connect: the connection service with every start of the process (the notification listener, a widget…), not
+        // only on MY_PACKAGE_REPLACED/boot: after an update Android doesn't always send it, and the phone then stayed
+        // on Janus Cloud without connecting on the local network. Android may refuse from the background; then it waits.
+        try {
+            BackgroundService.Start(this)
+        } catch (e: IllegalStateException) { // ForegroundServiceStartNotAllowedException
+            Log.w("KdeConnect/Application", "Couldn't start the connection service from the background", e)
+        }
 
         if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vmPolicyBuilder = VmPolicy.Builder(StrictMode.getVmPolicy())

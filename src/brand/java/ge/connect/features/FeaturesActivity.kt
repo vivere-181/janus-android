@@ -16,6 +16,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -84,9 +85,11 @@ class FeaturesActivity : AppCompatActivity() {
                     },
                 ) { padding ->
                     LazyColumn(
+                        // Below the title bar rather than under it: overlapping, a TV remote's focus can't leave the bar.
+                        modifier = Modifier.padding(top = padding.calculateTopPadding()),
                         contentPadding = PaddingValues(
                             start = 16.dp, end = 16.dp,
-                            top = padding.calculateTopPadding(),
+                            top = 0.dp,
                             bottom = padding.calculateBottomPadding() + 24.dp,
                         ),
                     ) {

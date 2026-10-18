@@ -20,10 +20,20 @@ import org.kde.kdeconnect.helpers.DeviceHelper
 object PhoneName {
     private const val KEY_ADOPTED = "ge_connect_system_name_adopted"
 
+    /** Placeholders some makers leave as the device name (TCL TVs: "NULL"). */
+    private val PLACEHOLDERS = setOf("null", "unknown", "android", "android tv", "localhost")
+
     fun adoptSystemNameOnce(context: Context) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        if (prefs.getBoolean(KEY_ADOPTED, false)) return
-        val name = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
+        // Also redone once for a name adopted from such a placeholder before this check existed.
+        val adopted = prefs.getString(DeviceHelper.KEY_DEVICE_NAME_PREFERENCE, null)
+        if (prefs.getBoolean(KEY_ADOPTED, false) && adopted?.trim()?.lowercase() !in PLACEHOLDERS) return
+        val system = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
+            ?.takeIf { it.trim().lowercase() !in PLACEHOLDERS }
+            // No real name: maker and model ("TCL Smart TV Pro"), as Android TV's own settings would show.
+            ?: listOf(android.os.Build.MANUFACTURER, android.os.Build.MODEL).filter { it.isNotBlank() }.distinct()
+                .joinToString(" ").replace('_', ' ').takeIf { it.isNotBlank() }
+        val name = system
             // The protocol forbids ' in names; the typographic apostrophe is allowed and looks the same.
             ?.replace('\'', '’')
             ?.let(DeviceHelper::filterInvalidCharactersFromDeviceNameAndLimitLength)

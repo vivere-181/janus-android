@@ -255,6 +255,6 @@ class MdnsDiscovery {
         const val SERVICE_TYPE: String = "_kdeconnect._udp"
 
         /** ge.connect: how long each discovery run lasts. */
-        const val DISCOVERY_WINDOW_MILLIS = 60_000L
+        const val DISCOVERY_WINDOW_MILLIS = 20_000L // ge.connect: the Mac answers within seconds; was 60 s
     }
 }

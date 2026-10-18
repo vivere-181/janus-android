@@ -119,7 +119,7 @@ class ShareSheetActivity : AppCompatActivity() {
         setContent {
             AppTheme {
                 ShareSheet(shared, devices, sending, result, onDismiss = ::finish) { device, copy ->
-                    if (shared is Shared.Files && device.isReachable) {
+                    if (shared is Shared.Files && (device.isReachable || ge.connect.cloud.JanusCloud.canSend(device))) {
                         // Files: the sheet turns into a progress view, then shows the result until Done.
                         sending = device to System.currentTimeMillis()
                         send(device, shared, copy, quiet = true)
@@ -152,12 +152,29 @@ class ShareSheetActivity : AppCompatActivity() {
 
     private fun send(device: Device, shared: Shared, copy: Boolean, quiet: Boolean = false): String {
         val toast: String = when {
+            // Links and text for a Mac that's away go through Janus Cloud (R37); copied text lands on its clipboard too.
+            !device.isReachable && shared !is Shared.Files && ge.connect.cloud.CloudCompanion.away(device) -> {
+                when (shared) {
+                    is Shared.Links -> shared.urls.forEach { ge.connect.cloud.CloudCompanion.sendText(device, it, link = !copy) }
+                    is Shared.Text -> ge.connect.cloud.CloudCompanion.sendText(device, shared.text, link = false)
+                    is Shared.Files -> Unit
+                }
+                getString(R.string.share_sent, device.name)
+            }
             // Links for a computer that's away are delivered when it reconnects (same store as upstream).
             !device.isReachable && shared is Shared.Links -> {
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this)
                 val key = SharePlugin.KEY_UNREACHABLE_URL_LIST + device.deviceId
                 prefs.edit { putStringSet(key, shared.urls.toSet() + prefs.getStringSet(key, emptySet()).orEmpty()) }
                 getString(R.string.share_later, device.name)
+            }
+            // Files for a Mac that's away go through Janus Cloud (R36).
+            shared is Shared.Files && !copy && ge.connect.cloud.JanusCloud.useCloud(device) -> {
+                val uris = shared.uris
+                // Direct share finishes right away: open the files first, while we hold the permission.
+                if (quiet) Thread { ge.connect.cloud.CloudTransfers.send(device, uris) }.start()
+                else ge.connect.cloud.CloudTransfers.send(device, uris)
+                getString(R.string.share_sent, device.name)
             }
             !device.isReachable -> getString(R.string.share_not_connected, device.name)
             copy -> {
@@ -347,11 +364,18 @@ private fun ChooseContent(shared: Shared, devices: List<Device>, copy: Boolean, 
                 ListGroup(devices.map { device ->
                     { shapes ->
                         val live = device.isReachable
-                        // A link can wait for an away computer; anything else needs it connected.
-                        val usable = live || (shared is Shared.Links && !copy)
+                        val cloud = !live && ge.connect.cloud.JanusCloud.canSend(device)
+                        // A link can wait for an away computer, files can go through the cloud; else it must be connected.
+                        val usable = live || (shared is Shared.Links && !copy) || (cloud && (shared !is Shared.Files || !copy))
                         NavRow(
                             shapes, device.symbol, device.name,
-                            summary = stringResource(if (live) R.string.home_connected else R.string.home_not_connected),
+                            summary = stringResource(
+                                when {
+                                    live -> R.string.home_connected
+                                    cloud -> R.string.home_via_cloud
+                                    else -> R.string.home_not_connected
+                                }
+                            ),
                             enabled = usable,
                             iconContainer = if (live) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                             iconColor = if (live) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,

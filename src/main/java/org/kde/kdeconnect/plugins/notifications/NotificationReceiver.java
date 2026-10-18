@@ -10,6 +10,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.os.Build;
 import android.provider.Settings;
 import android.service.notification.NotificationListenerService;
@@ -102,6 +103,7 @@ public class NotificationReceiver extends NotificationListenerService {
     @Override
     public void onListenerConnected() {
         super.onListenerConnected();
+        runPendingCallbacks(); // ge.connect: also when the system bound us without a startService (see RunCommand)
         for (NotificationListener listener : listeners) {
             listener.onListenerConnected(this);
         }
@@ -136,6 +138,11 @@ public class NotificationReceiver extends NotificationListenerService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //Log.e("NotificationReceiver", "onStartCommand");
+        runPendingCallbacks();
+        return Service.START_STICKY;
+    }
+
+    private void runPendingCallbacks() {
         mutex.lock();
         try {
             for (InstanceCallback c : callbacks) {
@@ -145,7 +152,6 @@ public class NotificationReceiver extends NotificationListenerService {
         } finally {
             mutex.unlock();
         }
-        return Service.START_STICKY;
     }
 
 
@@ -163,7 +169,14 @@ public class NotificationReceiver extends NotificationListenerService {
             }
         }
         Intent serviceIntent = new Intent(c, NotificationReceiver.class);
-        c.startService(serviceIntent);
+        // ge.connect: Android 12+ refuses to start a service from the background (e.g. the app started for a widget
+        // update while notification access isn't granted), which crashed the app at startup. The system binds the
+        // listener by itself once access is granted, and the queued callbacks run then.
+        try {
+            c.startService(serviceIntent);
+        } catch (IllegalStateException | SecurityException e) {
+            Log.w("NotificationReceiver", "Not started now (" + e.getClass().getSimpleName() + "); waiting for the system to bind it");
+        }
     }
 
 }

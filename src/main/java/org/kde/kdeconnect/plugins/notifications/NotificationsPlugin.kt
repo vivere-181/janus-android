@@ -318,6 +318,8 @@ class NotificationsPlugin : Plugin(), NotificationReceiver.NotificationListener 
             if (np.payload == null && iconBytes != null) np.payload = NetworkPacket.Payload(iconBytes)
         }
         sentSignatures[key] = signature
+        // ge.connect: a code in it may come back as the Mac's clipboard (its "Copy Code"); not shown as copied again
+        ge.connect.sync.ClipboardGuard.sentNotification(np.getStringOrNull("title"), np.getStringOrNull("text"), np.getStringOrNull("ticker"))
         Log.i(TAG, "Sending $packageName (${System.identityHashCode(this)}): silent=${np.getBoolean("silent")}, actions=${np.getJSONArray("actions")?.length() ?: 0}, repost=$repost") // ge.connect
         device.sendPacket(np)
     }

@@ -64,6 +64,11 @@ public class FindMyPhoneActivity extends BaseActivity<ActivityFindMyPhoneBinding
         super.onStart();
         FindMyPhonePlugin plugin = KdeConnect.getInstance().getDevicePlugin(deviceId, FindMyPhonePlugin.class);
         if (plugin == null) {
+            // ge.connect: rung through Janus Cloud while the Mac is away (R37)
+            if (ge.connect.cloud.CloudRinger.INSTANCE.owns(deviceId)) {
+                ge.connect.cloud.CloudRinger.INSTANCE.setRingingActivity(new java.lang.ref.WeakReference<>(this));
+                ge.connect.cloud.CloudRinger.INSTANCE.start(this);
+            }
             return;
         }
         plugin.ringingActivity = new java.lang.ref.WeakReference<>(this); // ge.connect: lets a second request close us
@@ -77,6 +82,7 @@ public class FindMyPhoneActivity extends BaseActivity<ActivityFindMyPhoneBinding
         super.onStop();
         FindMyPhonePlugin plugin = KdeConnect.getInstance().getDevicePlugin(deviceId, FindMyPhonePlugin.class);
         if (plugin == null) {
+            if (ge.connect.cloud.CloudRinger.INSTANCE.owns(deviceId)) ge.connect.cloud.CloudRinger.INSTANCE.stop(this); // ge.connect (R37)
             return;
         }
         plugin.ringingActivity = null; // ge.connect

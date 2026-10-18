@@ -77,34 +77,34 @@ class NotesWidget : GlanceAppWidget() {
         val size = LocalSize.current
         val lines = if (size.height >= TALL.height) 4 else 2
         Column(
-            GlanceModifier.fillMaxSize().appWidgetBackground().cornerRadius(24.dp)
-                .background(GlanceTheme.colors.widgetBackground).padding(12.dp),
+            GlanceModifier.fillMaxSize().appWidgetBackground().cornerRadius(26.dp)
+                .background(NoteWidgetColors.frame).padding(12.dp),
         ) {
             Row(GlanceModifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     context.getString(R.string.notes_title),
-                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(color = NoteWidgetColors.text, fontSize = 17.sp, fontWeight = FontWeight.Bold),
                     modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(NotesActivity.intent(context))),
                 )
                 Box(
-                    GlanceModifier.size(40.dp).cornerRadius(20.dp).background(GlanceTheme.colors.primaryContainer)
-                        .clickable(actionStartActivity(NoteEditorActivity.newNoteIntent(context))),
+                    GlanceModifier.size(38.dp).cornerRadius(19.dp).background(NoteWidgetColors.primary)
+                        .clickable(actionStartActivity(NoteEditorActivity.newNoteExternalIntent(context))),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
                         ImageProvider(R.drawable.ms_add), context.getString(R.string.notes_new),
-                        colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer), modifier = GlanceModifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(NoteWidgetColors.onPrimary), modifier = GlanceModifier.size(22.dp),
                     )
                 }
             }
             if (notes.isEmpty()) {
-                Box(GlanceModifier.fillMaxSize().clickable(actionStartActivity(NoteEditorActivity.newNoteIntent(context))), contentAlignment = Alignment.Center) {
-                    Text(context.getString(R.string.notes_empty_widget), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp))
+                Box(GlanceModifier.fillMaxSize().clickable(actionStartActivity(NoteEditorActivity.newNoteExternalIntent(context))), contentAlignment = Alignment.Center) {
+                    Text(context.getString(R.string.notes_empty_widget), style = TextStyle(color = NoteWidgetColors.muted, fontSize = 14.sp))
                 }
             } else {
                 LazyColumn {
                     items(notes, itemId = { it.id.hashCode().toLong() }) { note ->
-                        Column(GlanceModifier.fillMaxWidth().padding(bottom = 6.dp)) { NoteCard(context, note, lines) }
+                        Column(GlanceModifier.fillMaxWidth().padding(bottom = 8.dp)) { NoteCard(context, note, lines) }
                     }
                 }
             }
@@ -113,57 +113,26 @@ class NotesWidget : GlanceAppWidget() {
 
     @Composable
     private fun NoteCard(context: Context, note: Note, lines: Int) {
-        val open = actionStartActivity(NoteEditorActivity.intent(context, note.id))
+        val c = NoteWidgetColors
+        val open = actionStartActivity(NoteEditorActivity.externalIntent(context, note.id))
         Column(
-            GlanceModifier.fillMaxWidth().cornerRadius(16.dp).background(GlanceTheme.colors.secondaryContainer)
-                .padding(horizontal = 12.dp, vertical = 10.dp).clickable(open),
+            GlanceModifier.fillMaxWidth().cornerRadius(20.dp).background(c.card)
+                .padding(horizontal = 14.dp, vertical = 12.dp).clickable(open),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (note.pinned) {
-                    Image(
-                        ImageProvider(R.drawable.ms_push_pin_filled), null,
-                        colorFilter = ColorFilter.tint(GlanceTheme.colors.primary), modifier = GlanceModifier.size(14.dp),
-                    )
-                    Spacer(GlanceModifier.width(4.dp))
-                }
                 Text(
                     note.title.ifEmpty { context.getString(R.string.notes_untitled) }, maxLines = 1,
-                    style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(color = c.text, fontSize = 15.sp, fontWeight = FontWeight.Bold),
+                    modifier = GlanceModifier.defaultWeight(),
+                )
+                if (note.pinned) Image(
+                    ImageProvider(R.drawable.ms_push_pin_filled), null,
+                    colorFilter = ColorFilter.tint(c.primary), modifier = GlanceModifier.size(14.dp),
                 )
             }
-            // The lines after the title; checklist items get a box that ticks right here.
-            NoteMarkdown.preview(note.text).take(lines).forEach { line ->
-                Spacer(GlanceModifier.height(2.dp))
-                val indent = (line.level * 12).dp
-                if (line.kind == NoteMarkdown.Kind.CHECK) {
-                    CheckBox(
-                        checked = line.checked,
-                        onCheckedChange = actionRunCallback<ToggleItemAction>(actionParametersOf(KEY_NOTE to note.id, KEY_LINE to line.index)),
-                        text = line.text,
-                        style = TextStyle(
-                            color = if (line.checked) GlanceTheme.colors.onSurfaceVariant else GlanceTheme.colors.onSecondaryContainer,
-                            fontSize = 13.sp, textDecoration = if (line.checked) TextDecoration.LineThrough else null,
-                        ),
-                        maxLines = 1,
-                        modifier = GlanceModifier.height(28.dp).padding(start = indent),
-                    )
-                } else {
-                    val prefix = when (line.kind) {
-                        NoteMarkdown.Kind.BULLET -> "•  "
-                        NoteMarkdown.Kind.NUMBER -> "${line.number}.  "
-                        NoteMarkdown.Kind.QUOTE -> "▍ "
-                        else -> ""
-                    }
-                    val heading = line.kind == NoteMarkdown.Kind.TITLE || line.kind == NoteMarkdown.Kind.HEADING || line.kind == NoteMarkdown.Kind.SUBHEADING
-                    Text(
-                        prefix + line.text, maxLines = 1,
-                        style = TextStyle(
-                            color = if (heading) GlanceTheme.colors.onSecondaryContainer else GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 13.sp, fontWeight = if (heading) FontWeight.Medium else null,
-                        ),
-                        modifier = GlanceModifier.padding(start = indent),
-                    )
-                }
+            // The lines after the title (ticked items left out); checklist items tick right here.
+            NoteMarkdown.preview(note.text).filterNot { it.kind == NoteMarkdown.Kind.CHECK && it.checked }.take(lines).forEach { line ->
+                NoteWidgetLine(note, line, open, singleLine = true)
             }
         }
     }
@@ -188,16 +157,19 @@ class NotesWidget : GlanceAppWidget() {
          */
         fun requestUpdate() {
             val context = appContext ?: return
-            val placed = runCatching {
+            fun placed(receiver: Class<*>) = runCatching {
                 android.appwidget.AppWidgetManager.getInstance(context)
-                    .getAppWidgetIds(android.content.ComponentName(context, NotesWidgetReceiver::class.java)).isNotEmpty()
+                    .getAppWidgetIds(android.content.ComponentName(context, receiver)).isNotEmpty()
             }.getOrDefault(false)
-            if (!placed) return
+            val list = placed(NotesWidgetReceiver::class.java)
+            val single = placed(NoteWidgetReceiver::class.java)
+            if (!list && !single) return
             synchronized(this) {
                 pending?.cancel()
                 pending = scope.launch {
                     kotlinx.coroutines.delay(500)
-                    runCatching { NotesWidget().updateAll(context) }
+                    if (list) runCatching { NotesWidget().updateAll(context) }
+                    if (single) runCatching { NoteWidget().updateAll(context) }
                 }
             }
         }

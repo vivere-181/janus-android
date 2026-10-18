@@ -39,6 +39,11 @@ class HomeActivity : AppCompatActivity(), HomeCallbacks {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         handleIntent(intent)
+        // Janus Cloud set up or dropped, or its connection changed (R36): the status and Send follow.
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(ge.connect.cloud.JanusCloud.peers, ge.connect.cloud.JanusCloud.link) { _, _ -> }
+                .collect { update() }
+        }
         setContent {
             AppTheme {
                 HomeScreen(ui = ui, refreshing = refreshing, pairError = pairError, callbacks = this)
@@ -173,6 +178,17 @@ class HomeActivity : AppCompatActivity(), HomeCallbacks {
     }
 
 
+    /** With a TV's remote on screen, the volume keys are the TV's (TvVolumeKeys). */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val code = event.keyCode
+        val handler = ge.connect.tv.TvVolumeKeys.handler
+        if (handler != null && (code == android.view.KeyEvent.KEYCODE_VOLUME_UP || code == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) handler(code)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun runAction(action: DeviceAction) = action.run(this)
 
     override fun requestPermission(request: PermissionRequest) {
@@ -185,6 +201,10 @@ class HomeActivity : AppCompatActivity(), HomeCallbacks {
     override fun runMacControl(control: MacControl) {
         val device = device ?: return
         ge.connect.sync.MacState.started(device.deviceId, control.key) // progress + result feedback (R19)
+        if (!device.isReachable && ge.connect.cloud.CloudCompanion.away(device)) {
+            ge.connect.cloud.CloudCompanion.action(device, control.key) // through Janus Cloud while the Mac is away (R37)
+            return
+        }
         device.getPlugin(org.kde.kdeconnect.plugins.runcommand.RunCommandPlugin::class.java)?.runCommand(control.key)
     }
 

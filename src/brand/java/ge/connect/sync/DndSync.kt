@@ -52,7 +52,8 @@ object DndSync {
         reachable.retainAll(connected.map { it.deviceId }.toSet())
     }
 
-    private fun reportToAll(context: Context) = connectedDevices().forEach { report(context, it) }
+    private fun reportToAll(context: Context) =
+        (connectedDevices() + ge.connect.cloud.CloudCompanion.awayMacs()).forEach { report(context, it) } // R37: away Macs via the cloud
 
     private fun report(context: Context, device: Device) {
         if (!isEnabled(context)) return
