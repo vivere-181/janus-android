@@ -104,6 +104,43 @@ object NotesStore {
             purgeExpired()
             publish()
         }
+        // Once: the conflict copies left by the lagging-base bug (2026-10-18).
+        val prefs = app.getSharedPreferences("ge_connect_notes", android.content.Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("copies_cleaned_v1", false)) {
+            cleanUpCopies()
+            prefs.edit().putBoolean("copies_cleaned_v1", true).apply()
+        }
+    }
+
+    /**
+     * Deletes conflict copies (ids from `UUID.nameUUIDFromBytes`, version 3; notes themselves get random ones) that are
+     * only an earlier stage of another note: same title start, and all of the copy's text is in the other note in the
+     * same order (only additions since). Copies where something was removed or changed later are kept. Deleted copies
+     * go to Recently deleted (30 days) and the deletion syncs to the Macs.
+     */
+    private fun cleanUpCopies() = synchronized(lock) {
+        val live = notes.values.filter { it.deleted == null }
+        val copies = live.filter { runCatching { UUID.fromString(it.id).version() == 3 }.getOrDefault(false) }.sortedBy { it.text.length }
+        val removed = HashSet<String>()
+        for (copy in copies) {
+            val title = copy.text.lineSequence().firstOrNull().orEmpty().trim()
+            val newer = live.any { other ->
+                other.id != copy.id && other.id !in removed &&
+                    other.text.lineSequence().firstOrNull().orEmpty().trim().startsWith(title) &&
+                    (other.text.length > copy.text.length || (other.text == copy.text && other.id < copy.id)) &&
+                    isSubsequence(copy.text, other.text)
+            }
+            if (newer) removed += copy.id
+        }
+        removed.forEach { delete(it) }
+        if (removed.isNotEmpty()) Log.i(TAG, "Removed ${removed.size} conflict copies that were earlier stages of other notes")
+    }
+
+    /** Whether all of [part] appears in [whole] in the same order (characters only added in between). */
+    private fun isSubsequence(part: String, whole: String): Boolean {
+        var i = 0
+        for (c in whole) if (i < part.length && part[i] == c) i++
+        return i == part.length
     }
 
     fun get(id: String): Note? = synchronized(lock) { notes[id] }
