@@ -13,7 +13,6 @@
     <string name="remotekeyboard_not_connected">There is no active remote keyboard connection, establish one from your computer</string>
     <string name="remote_keyboard_service">Remote Keyboard</string>
     <string name="mpris_notification_settings_summary">Allow controlling your media players without opening the app</string>
-    <string name="sftp_manage_storage_permission_explanation">To allow remote access to files on this device you need to allow this app to manage the storage.</string>
     <string name="pref_plugin_telepathy_mms_desc">To be able to send MMS from this app you need to set it as the default SMS app.</string>
     <string name="contacts_per_device_confirmation">Your phone contacts will be copied over to this device, so they can be used by its messaging app and other apps.</string>
     <string name="addcommand_explanation2">You can add new commands in the app on your computer</string>

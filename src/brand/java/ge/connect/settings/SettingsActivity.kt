@@ -107,20 +107,12 @@ class SettingsActivity : AppCompatActivity() {
         var keepWirelessDebugging by remember { mutableStateOf(ge.connect.sync.Mirroring.keepOn(context)) }
         val cloudPeers by ge.connect.cloud.JanusCloud.peers.collectAsState()
         val cloudLink by ge.connect.cloud.JanusCloud.link.collectAsState()
-        var bluetooth by remember { mutableStateOf(prefs.getBoolean(SettingsFragment.KEY_BLUETOOTH_ENABLED, false)) }
         var phoneName by remember { mutableStateOf(DeviceHelper.getDeviceName(context)) }
         var theme by remember { mutableStateOf(prefs.getString(SettingsFragment.KEY_APP_THEME, ThemeUtil.DEFAULT_MODE)!!) }
 
         val themeLabels = stringArrayResource(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) R.array.theme_list_v28 else R.array.theme_list)
         val themeValues = stringArrayResource(R.array.theme_list_values)
 
-        fun setBluetooth(on: Boolean) {
-            bluetooth = on
-            prefs.edit { putBoolean(SettingsFragment.KEY_BLUETOOTH_ENABLED, on) }
-        }
-        val bluetoothPermissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            if (result.values.all { it }) setBluetooth(true)
-        }
         val trustedNetworks = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             BackgroundService.instance?.onNetworkChange(null)
         }
@@ -253,20 +245,6 @@ class SettingsActivity : AppCompatActivity() {
                         ) { startActivity(CloudActivity.intent(context)) } },
                         { s -> NavRow(s, R.drawable.ms_wifi, stringResource(R.string.trusted_networks), stringResource(R.string.trusted_networks_desc)) {
                             trustedNetworks.launch(Intent(context, TrustedNetworksActivity::class.java))
-                        } },
-                        { s -> NavRow(
-                            s, R.drawable.ms_bluetooth, stringResource(R.string.enable_bluetooth), stringResource(R.string.settings_bluetooth_summary),
-                            trailing = { Switch(checked = bluetooth, onCheckedChange = null) },
-                        ) {
-                            val missing = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                listOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
-                                    .filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
-                            } else emptyList()
-                            when {
-                                bluetooth -> setBluetooth(false)
-                                missing.isEmpty() -> setBluetooth(true)
-                                else -> bluetoothPermissions.launch(missing.toTypedArray())
-                            }
                         } },
                     ))
                 }

@@ -20,9 +20,6 @@
 -keepattributes SourceFile,LineNumberTable,Signature,*Annotation*
 -keep class org.kde.kdeconnect.** {*;}
 
-# SSHd requires mina, and mina uses reflection so some classes would get deleted
--keep class org.apache.sshd.** {*;}
--dontwarn org.apache.sshd.**
 
 # The android-smsmms library uses class casting and reflection internally.
 # R8 optimization breaks PduPersister, causing SMSPlugin.onCreate() to crash.

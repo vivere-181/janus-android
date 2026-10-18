@@ -32,7 +32,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 
 import org.kde.kdeconnect.KdeConnect;
-import org.kde.kdeconnect.plugins.digitizer.DigitizerPlugin;
 import org.kde.kdeconnect.ui.PluginSettingsActivity;
 import org.kde.kdeconnect.base.BaseActivity;
 import org.kde.kdeconnect_tp.R;

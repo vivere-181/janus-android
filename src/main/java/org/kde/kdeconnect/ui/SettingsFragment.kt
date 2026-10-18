@@ -68,7 +68,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             persistentNotificationPref(context),
             trustedNetworkPref(context),
             devicesByIpPref(context),
-            bluetoothSupportPref(context),
             exportLogsPref(context),
             moreSettingsPref(context),
         ).forEach(screen::addPreference)
@@ -211,28 +210,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         ))
     }
 
-    private fun bluetoothSupportPref(context: Context) = SwitchPreference(context).apply {
-        setDefaultValue(false)
-        key = KEY_BLUETOOTH_ENABLED
-        setTitle(R.string.enable_bluetooth)
-        onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _: Preference?, newValue: Any ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && newValue as Boolean) {
-                val permissions = arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
-                val permissionsGranted = permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-                if (!permissionsGranted) {
-                    PermissionsAlertDialogFragment.Builder()
-                        .setTitle(R.string.location_permission_needed_title)
-                        .setMessage(R.string.bluetooth_permission_needed_desc)
-                        .setPermissions(permissions)
-                        .setRequestCode(2)
-                        .create().show(childFragmentManager, null)
-                    return@OnPreferenceChangeListener false
-                }
-            }
-            true
-        }
-    }
-
     private fun exportLogsPref(context: Context) = Preference(context).apply {
         isPersistent = false
         setTitle(R.string.settings_export_logs)
@@ -266,7 +243,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     companion object {
-        const val KEY_BLUETOOTH_ENABLED: String = "bluetooth_enabled"
         const val KEY_APP_THEME: String = "theme_pref"
     }
 }

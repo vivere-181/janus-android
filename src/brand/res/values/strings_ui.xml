@@ -112,7 +112,6 @@
     <string name="settings_about_app">About %1$s</string>
     <string name="settings_licenses">Open-source licenses</string>
     <string name="settings_logs_summary">Save a log file for troubleshooting</string>
-    <string name="settings_bluetooth_summary">Experimental. Connect when Wi-Fi isn\'t available.</string>
     <string name="settings_devices_by_ip_summary">%1$d added</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
@@ -186,7 +185,6 @@
     <string name="connection_since">Since %1$s</string>
     <string name="connection_last_seen">Last seen %1$s</string>
     <string name="connection_via_wifi">Wi-Fi</string>
-    <string name="connection_via_bluetooth">Bluetooth</string>
     <string name="connection_via_other">Other connection</string>
     <string name="connection_protocol">Protocol</string>
     <string name="connection_protocol_value">Version %1$d</string>
@@ -266,7 +264,6 @@
     <string name="more_ring_summary">Make it ring, even when it\'s on silent</string>
     <string name="more_ping_summary">Send a quick notification</string>
     <string name="more_presenter_summary">Control slides from your phone</string>
-    <string name="more_digitizer_summary">Use this phone as a drawing tablet</string>
     <string name="more_tv_summary">Control a TV-style computer</string>
     <string name="more_remote_summary">Use this phone as the computer\'s touchpad and keyboard</string>
     <string name="preferences_title">Preferences</string>

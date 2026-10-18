@@ -149,9 +149,9 @@ class FeaturesActivity : AppCompatActivity() {
             "NotificationsPlugin", "ReceiveNotificationsPlugin", "SMSPlugin", "TelephonyPlugin", "ContactsPlugin",
             "ClipboardPlugin", "SharePlugin", "BatteryPlugin", "ConnectivityReportPlugin", "PingPlugin" -> Category.Sync
             "MousePadPlugin", "PresenterPlugin", "RunCommandPlugin", "MprisPlugin", "SystemVolumePlugin",
-            "DigitizerPlugin", "FindRemoteDevicePlugin" -> Category.ControlComputer
+            "FindRemoteDevicePlugin" -> Category.ControlComputer
             "RemoteKeyboardPlugin", "RemoteKeyboardIMEPlugin", "MouseReceiverPlugin", "InputDevicesReceiverPlugin",
-            "MprisReceiverPlugin", "FindMyPhonePlugin", "SftpPlugin" -> Category.ControlPhone
+            "MprisReceiverPlugin", "FindMyPhonePlugin" -> Category.ControlPhone
             else -> Category.Other
         }
 
@@ -172,14 +172,12 @@ class FeaturesActivity : AppCompatActivity() {
             "RunCommandPlugin" -> R.drawable.ms_terminal
             "MprisPlugin" -> R.drawable.ms_play_circle
             "SystemVolumePlugin" -> R.drawable.ms_volume_up
-            "DigitizerPlugin" -> R.drawable.ms_draw
             "FindRemoteDevicePlugin" -> R.drawable.ms_ring_volume
             "RemoteKeyboardPlugin", "RemoteKeyboardIMEPlugin" -> R.drawable.ms_keyboard
             "MouseReceiverPlugin" -> R.drawable.ms_mouse
             "InputDevicesReceiverPlugin" -> R.drawable.ms_stadia_controller
             "MprisReceiverPlugin" -> R.drawable.ms_music_note
             "FindMyPhonePlugin" -> R.drawable.ms_location_searching
-            "SftpPlugin" -> R.drawable.ms_folder
             else -> R.drawable.ms_tune
         }
     }

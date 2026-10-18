@@ -198,9 +198,7 @@ class ConnectionActivity : AppCompatActivity() {
             device.activeLinks.map { link ->
                 when (link) {
                     is LanLink -> context.getString(R.string.connection_via_wifi) to link.remoteAddress?.hostAddress
-                    else -> context.getString(
-                        if (link.name.contains("Bluetooth", ignoreCase = true)) R.string.connection_via_bluetooth else R.string.connection_via_other,
-                    ) to null
+                    else -> context.getString(R.string.connection_via_other) to null
                 }
             }
 

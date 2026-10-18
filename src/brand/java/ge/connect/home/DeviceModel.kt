@@ -258,12 +258,11 @@ fun Device.encryptionInfo(context: Context): String = buildString {
 }
 
 // Remote input is under More too (owner, 2026-10-16): Notes takes its tile.
-private val SECONDARY_PLUGINS = setOf("RunCommandPlugin", "PresenterPlugin", "DigitizerPlugin", "MousePadPlugin")
+private val SECONDARY_PLUGINS = setOf("RunCommandPlugin", "PresenterPlugin", "MousePadPlugin")
 
 private fun actionSummary(context: Context, pluginKey: String, buttonIndex: Int): String? = when {
     pluginKey == "RunCommandPlugin" -> context.getString(R.string.more_commands_summary)
     pluginKey == "PresenterPlugin" -> context.getString(R.string.more_presenter_summary)
-    pluginKey == "DigitizerPlugin" -> context.getString(R.string.more_digitizer_summary)
     pluginKey == "MousePadPlugin" && buttonIndex > 0 -> context.getString(R.string.more_tv_summary)
     pluginKey == "MousePadPlugin" -> context.getString(R.string.more_remote_summary)
     else -> null
@@ -271,7 +270,7 @@ private fun actionSummary(context: Context, pluginKey: String, buttonIndex: Int)
 
 // Most-used first.
 private val ACTION_ORDER = listOf(
-    "SharePlugin", "ClipboardPlugin", "MousePadPlugin", "MprisPlugin", "RunCommandPlugin", "PresenterPlugin", "DigitizerPlugin",
+    "SharePlugin", "ClipboardPlugin", "MousePadPlugin", "MprisPlugin", "RunCommandPlugin", "PresenterPlugin",
 )
 
 @DrawableRes
@@ -282,7 +281,6 @@ private fun actionSymbol(pluginKey: String, buttonIndex: Int): Int? = when (plug
     "MprisPlugin" -> R.drawable.ms_play_circle_filled
     "RunCommandPlugin" -> R.drawable.ms_terminal_filled
     "PresenterPlugin" -> R.drawable.ms_co_present_filled
-    "DigitizerPlugin" -> R.drawable.ms_draw_filled
     else -> null
 }
 
