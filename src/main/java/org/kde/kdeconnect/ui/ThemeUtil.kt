@@ -15,6 +15,8 @@ import androidx.preference.PreferenceManager
  * Utilities for working with android [Themes][android.content.res.Resources.Theme].
  */
 object ThemeUtil {
+    /** The theme setting's key (light, dark or follow the system). */
+    const val KEY_APP_THEME: String = "theme_pref"
     @Suppress("MemberVisibilityCanBePrivate")
     const val LIGHT_MODE: String = "light"
     @Suppress("MemberVisibilityCanBePrivate")

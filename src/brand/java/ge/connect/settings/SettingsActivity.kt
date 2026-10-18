@@ -70,7 +70,6 @@ import kotlinx.coroutines.launch
 import org.kde.kdeconnect.BackgroundService
 import org.kde.kdeconnect.helpers.DeviceHelper
 import org.kde.kdeconnect.ui.CustomDevicesActivity
-import org.kde.kdeconnect.ui.SettingsFragment
 import org.kde.kdeconnect.ui.ThemeUtil
 import org.kde.kdeconnect.ui.about.LicensesActivity
 import org.kde.kdeconnect_tp.BuildConfig
@@ -108,7 +107,7 @@ class SettingsActivity : AppCompatActivity() {
         val cloudPeers by ge.connect.cloud.JanusCloud.peers.collectAsState()
         val cloudLink by ge.connect.cloud.JanusCloud.link.collectAsState()
         var phoneName by remember { mutableStateOf(DeviceHelper.getDeviceName(context)) }
-        var theme by remember { mutableStateOf(prefs.getString(SettingsFragment.KEY_APP_THEME, ThemeUtil.DEFAULT_MODE)!!) }
+        var theme by remember { mutableStateOf(prefs.getString(ThemeUtil.KEY_APP_THEME, ThemeUtil.DEFAULT_MODE)!!) }
 
         val themeLabels = stringArrayResource(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) R.array.theme_list_v28 else R.array.theme_list)
         val themeValues = stringArrayResource(R.array.theme_list_values)
@@ -285,7 +284,7 @@ class SettingsActivity : AppCompatActivity() {
             ) { index ->
                 pickTheme = false
                 theme = themeValues[index]
-                prefs.edit { putString(SettingsFragment.KEY_APP_THEME, theme) }
+                prefs.edit { putString(ThemeUtil.KEY_APP_THEME, theme) }
                 ThemeUtil.applyTheme(theme)
             }
         }
