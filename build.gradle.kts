@@ -197,7 +197,6 @@ dependencies {
     implementation(libs.okhttp) // ge.connect: Janus Cloud relay (HTTP/2 + WebSocket, R36)
 
     // Kotlin
-    implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
