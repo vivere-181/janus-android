@@ -13,7 +13,6 @@ buildscript {
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.dependencyLicenseReport)
     alias(libs.plugins.compose.compiler)
 }
@@ -117,10 +116,6 @@ android {
     }
 }
 
-ksp {
-    arg("com.albertvaka.classindexksp.annotations", "org.kde.kdeconnect.plugins.PluginFactory.LoadablePlugin")
-}
-
 androidComponents {
     onVariants { variant ->
         // When the "Generate Signed APK/Bundle" wizard is used, copy the source map to the output directory
@@ -184,14 +179,14 @@ dependencies {
 
     implementation(libs.bcpkix.jdk18on) //For SSL certificate generation
 
-    ksp(libs.classindexksp)
-
     // The android-smsmms library is the only way I know to handle MMS in Android
     // (Shouldn't a phone OS make phone things easy?)
     // This library was originally authored as com.klinkerapps at https://github.com/klinker41/android-smsmms.
     // However, that version is under-loved. I have therefore made "some fixes" and published it.
     // Please see https://invent.kde.org/sredman/android-smsmms/-/tree/master
-    implementation(libs.android.smsmms)
+    implementation(files("libs/android-smsmms/android-smsmms.aar")) // ge.connect: vendored (libs/android-smsmms/README.md)
+    implementation(libs.okhttp2) // what android-smsmms needs (its own dependencies; a local .aar doesn't bring them)
+    implementation(libs.okhttp2.urlconnection)
     implementation(libs.logger)
 
     implementation(libs.commons.io)

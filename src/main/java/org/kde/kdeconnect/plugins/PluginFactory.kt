@@ -10,15 +10,47 @@ import android.util.Log
 import org.kde.kdeconnect.Device
 
 object PluginFactory {
-    annotation class LoadablePlugin  //Annotate plugins with this so PluginFactory finds them
+    /** Marks a plugin class; every one must also be in [PLUGINS] (PluginListTest checks). */
+    annotation class LoadablePlugin
+
+    // ge.connect: an explicit list instead of a build-time generated index (no annotation processor to fetch or run).
+    val PLUGINS: List<kotlin.reflect.KClass<out Plugin>> = listOf(
+        ge.connect.camera.GeCameraPlugin::class,
+        ge.connect.tv.GeTvPlugin::class,
+        org.kde.kdeconnect.plugins.battery.BatteryPlugin::class,
+        org.kde.kdeconnect.plugins.clipboard.ClipboardPlugin::class,
+        org.kde.kdeconnect.plugins.connectivityreport.ConnectivityReportPlugin::class,
+        org.kde.kdeconnect.plugins.connectivityreport.GePeerSignalPlugin::class,
+        org.kde.kdeconnect.plugins.contacts.ContactsPlugin::class,
+        org.kde.kdeconnect.plugins.findmyphone.FindMyPhonePlugin::class,
+        org.kde.kdeconnect.plugins.findremotedevice.FindRemoteDevicePlugin::class,
+        org.kde.kdeconnect.plugins.inputdevicesreceiver.InputDevicesReceiverPlugin::class,
+        org.kde.kdeconnect.plugins.mousepad.MousePadPlugin::class,
+        org.kde.kdeconnect.plugins.mousereceiver.MouseReceiverPlugin::class,
+        org.kde.kdeconnect.plugins.mpris.MprisPlugin::class,
+        org.kde.kdeconnect.plugins.mprisreceiver.MprisReceiverPlugin::class,
+        org.kde.kdeconnect.plugins.notifications.GeRemoteNotificationsPlugin::class,
+        org.kde.kdeconnect.plugins.notifications.NotificationsPlugin::class,
+        org.kde.kdeconnect.plugins.ping.PingPlugin::class,
+        org.kde.kdeconnect.plugins.presenter.PresenterPlugin::class,
+        org.kde.kdeconnect.plugins.receivenotifications.ReceiveNotificationsPlugin::class,
+        org.kde.kdeconnect.plugins.remotekeyboard.RemoteKeyboardPlugin::class,
+        org.kde.kdeconnect.plugins.remotekeyboardime.RemoteKeyboardIMEPlugin::class,
+        org.kde.kdeconnect.plugins.runcommand.RunCommandPlugin::class,
+        org.kde.kdeconnect.plugins.share.SharePlugin::class,
+        org.kde.kdeconnect.plugins.sms.SMSPlugin::class,
+        org.kde.kdeconnect.plugins.systemvolume.SystemVolumePlugin::class,
+        org.kde.kdeconnect.plugins.telephony.GeRemoteCallsPlugin::class,
+        org.kde.kdeconnect.plugins.telephony.TelephonyPlugin::class,
+    )
 
     private var pluginInfo: Map<String, PluginInfo> = mapOf()
 
     fun initPluginInfo(context: Context) {
         try {
-            pluginInfo = com.albertvaka.classindexksp.LoadablePlugin
+            pluginInfo = PLUGINS
                 .asSequence()
-                .map { it.java.getDeclaredConstructor().newInstance() as Plugin }
+                .map { it.java.getDeclaredConstructor().newInstance() }
                 .onEach { it.setContext(context, null) }
                 .associate { Pair(it.pluginKey, PluginInfo(it)) }
         } catch (e: Exception) {
