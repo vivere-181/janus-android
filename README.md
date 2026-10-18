@@ -27,6 +27,15 @@ Janus is not affiliated with or endorsed by KDE. "KDE" and "KDE Connect" are tra
 - Live Activities: timers, deliveries, rides and other ongoing things on the Mac.
 - Phone ↔ phone: notifications, calls, controls and remote camera between two phones running Janus.
 - Quick Settings tiles, home-screen widgets, a "Find my Mac" and Mac controls (lock, mute, screenshot).
+- **Android TV**: install Janus on the TV too. The phone becomes its remote (D-pad, touchpad, keyboard, voice search,
+  volume, the TV's apps), and the TV receives AirPlay screen mirroring from a Mac, iPhone or iPad.
+
+## Install
+
+Download `Janus-<version>.apk` from [Releases](https://github.com/vivere-181/janus-android/releases) on the phone
+(or the TV) and open it. Android asks once to allow installs from your browser or file manager; allow it, then
+install. Updates install the same way, over the previous version, keeping your pairings. Every release is signed
+with the same key.
 
 ## How it pairs with the Mac
 
@@ -45,13 +54,16 @@ Requirements: JDK 17 and the Android SDK (Android Studio works too).
 
 Release builds are signed with your own key: create `keystore.properties` (not in the repository) with
 `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Without it, builds use the debug key.
+`tools/release.sh <version>` makes a release (version, tests, signed APK, tag; `--publish` uploads it).
 
 ## Licence
 
 Janus is free software under the **GNU General Public License v3.0** ([LICENSE](LICENSE)). KDE Connect's files keep
 their original licence headers (GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL); see `LICENSES/`.
 Bundled assets: Google Sans Flex (SIL Open Font License, `src/brand/OFL-GoogleSansFlex.txt`), Material Symbols
-(Apache 2.0). The Janus icon sources are in `icon/`.
+(Apache 2.0). The Janus icon sources are in `icon/`. The AirPlay receiver for Android TV (`src/airplay`) is
+UxPlay via [android-airplay-server](https://github.com/jqssun/android-airplay-server) (GPL-3.0), with libplist,
+OpenSSL, Oboe and FFmpeg's ALAC decoder under their own licences; see `src/airplay/README.md`.
 
 Apple, Mac and MacBook are trademarks of Apple Inc.; Samsung and Galaxy are trademarks of Samsung Electronics.
 They're used only to describe the devices Janus works with.

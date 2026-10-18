@@ -42,8 +42,8 @@ android {
         applicationId = "io.github.vivere_181.janus" // ge.connect: io.github.<GitHub user>.janus ("-" isn't allowed in Android ids)
         minSdk = 24 // ge.connect: Material 3 Expressive (1.5) needs 24
         targetSdk = 37
-        versionCode = 13517
-        versionName = "1.35.17"
+        versionCode = 110000
+        versionName = "1.0.0"
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
     buildFeatures {
