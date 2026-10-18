@@ -260,6 +260,12 @@ private fun DevicesScreen(
                 SectionHeader(stringResource(R.string.devices_section_more))
                 ListGroup(listOf(
                     { shapes ->
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        NavRow(shapes, R.drawable.ms_qr_code_scanner, stringResource(R.string.devices_scan_code), stringResource(R.string.devices_scan_code_summary)) {
+                            context.startActivity(ge.connect.pairing.PairActivity.intent(context))
+                        }
+                    },
+                    { shapes ->
                         NavRow(shapes, R.drawable.ms_add, stringResource(R.string.devices_add_by_ip), stringResource(R.string.devices_add_by_ip_summary), onClick = onAddByIp)
                     },
                     { shapes ->

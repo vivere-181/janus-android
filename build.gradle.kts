@@ -156,6 +156,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2) // ge.connect: remote camera (phone ↔ phone)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.zxing.core) // ge.connect: scanning the Mac's pairing QR code (R41)
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

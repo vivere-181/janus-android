@@ -50,6 +50,8 @@ class BackgroundService : Service() {
     private lateinit var applicationInstance: KdeConnect
 
     private val linkProviders = mutableListOf<BaseLinkProvider>()
+    /** ge.connect (R41): for connecting to a device from a scanned QR code. */
+    val lanLinkProvider: LanLinkProvider? get() = linkProviders.filterIsInstance<LanLinkProvider>().firstOrNull()
 
     /** Indicates whether device is connected over wifi / usb / bluetooth / (anything other than cellular) */
     val isConnectedToNonCellularNetwork: LiveData<Boolean>

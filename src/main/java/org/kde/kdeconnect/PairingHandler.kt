@@ -128,7 +128,8 @@ class PairingHandler(private val device: Device, private val callback: PairingCa
         }
     }
 
-    fun requestPairing() {
+    /** [janusPairCode]: ge.connect (R41), the one-time code from a scanned QR; the Mac then accepts without asking. */
+    fun requestPairing(janusPairCode: String? = null) {
         cancelTimer()
 
         if (state == PairState.Paired) {
@@ -170,6 +171,7 @@ class PairingHandler(private val device: Device, private val callback: PairingCa
         np["pair"] = true
         pairingTimestamp = System.currentTimeMillis() / 1000L
         np["timestamp"] = pairingTimestamp
+        if (janusPairCode != null) np["janusPairCode"] = janusPairCode
         device.sendPacket(np, statusCallback)
     }
 

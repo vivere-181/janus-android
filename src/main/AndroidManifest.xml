@@ -578,6 +578,18 @@ SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted
             </intent-filter>
         </activity>
         <!-- ge.connect: on a TV, what the phone's remote asks for that remote keys can't do (janus://inputs) -->
+        <!-- ge.connect: pairing with a Mac from its QR code, also from janus://pair links (R41) -->
+        <activity
+            android:name="ge.connect.pairing.PairActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="janus" android:host="pair" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="ge.connect.tv.TvActions"
             android:exported="true"

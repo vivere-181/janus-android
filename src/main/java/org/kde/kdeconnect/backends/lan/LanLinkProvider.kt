@@ -275,7 +275,9 @@ class LanLinkProvider(private val context: Context) : BaseLinkProvider() {
         identityPacket: NetworkPacket,
         socket: Socket,
         connectionStarted: ConnectionStarted,
-        deviceTrusted: Boolean
+        deviceTrusted: Boolean,
+        /** ge.connect (R41): only link if the peer's certificate (DER) hashes to this SHA-256 (QR pairing). */
+        expectedFingerprint: ByteArray? = null,
     ) {
         val deviceId = identityPacket.getString("deviceId")
         val protocolVersion = identityPacket.getInt("protocolVersion")
@@ -340,6 +342,12 @@ class LanLinkProvider(private val context: Context) : BaseLinkProvider() {
                         secureIdentityPacket = identityPacket
                     }
                     val certificate = event.peerCertificates[0]
+                    if (expectedFingerprint != null &&
+                        !java.security.MessageDigest.isEqual(java.security.MessageDigest.getInstance("SHA-256").digest(certificate.encoded), expectedFingerprint)) {
+                        Log.e("KDE/LanLinkProvider", "Certificate of $deviceId doesn't match the scanned code, refusing it")
+                        sslSocket.close()
+                        return@execute
+                    }
                     val deviceInfo = fromIdentityPacketAndCert(secureIdentityPacket, certificate)
                     Log.i("KDE/LanLinkProvider", "Handshake as $mode successful with ${deviceInfo.name} secured with ${event.cipherSuite}")
                     addOrUpdateLink(sslSocket, deviceInfo)
@@ -357,6 +365,37 @@ class LanLinkProvider(private val context: Context) : BaseLinkProvider() {
         Log.d("LanLinkProvider", "Starting handshake")
         sslSocket.startHandshake()
         Log.d("LanLinkProvider", "Handshake done")
+    }
+
+    /**
+     * ge.connect (R41, QR pairing): connects straight to [deviceId] at [address]:[port], as if its broadcast had arrived
+     * (we send our identity, it becomes the TLS client), and links it only if its certificate's SHA-256 is
+     * [fingerprint]. Blocks for the TCP connect and the handshake; the link appears through the usual callbacks.
+     */
+    @WorkerThread
+    @Throws(IOException::class)
+    fun connectDirectly(address: InetAddress, port: Int, deviceId: String, deviceName: String, fingerprint: ByteArray) {
+        val socket = SocketFactory.getDefault().createSocket()
+        try {
+            socket.connect(InetSocketAddress(address, port), 5_000)
+            configureSocket(socket)
+            val myIdentity = DeviceHelper.getDeviceInfo(context).toIdentityPacket()
+            myIdentity["targetDeviceId"] = deviceId
+            myIdentity["targetProtocolVersion"] = DeviceHelper.PROTOCOL_VERSION
+            socket.getOutputStream().apply { write(myIdentity.serialize().toByteArray()); flush() }
+            // Their real identity comes inside TLS (protocol 8); until then, what the code told us.
+            val theirs = NetworkPacket(NetworkPacket.PACKET_TYPE_IDENTITY).apply {
+                this["deviceId"] = deviceId
+                this["deviceName"] = deviceName
+                this["protocolVersion"] = DeviceHelper.PROTOCOL_VERSION
+                this["deviceType"] = "laptop"
+                this["tcpPort"] = port
+            }
+            identityPacketReceived(theirs, socket, ConnectionStarted.Remotely, TrustedDevices.isTrustedDevice(context, deviceId), fingerprint)
+        } catch (e: IOException) {
+            socket.closeSafe()
+            throw e
+        }
     }
 
     private fun isProtocolDowngrade(deviceId: String, protocolVersion: Int): Boolean {

@@ -185,7 +185,7 @@ class Device : PacketReceiver {
 
     fun removePairingCallback(callback: PairingCallback) = pairingCallbacks.remove(callback)
 
-    fun requestPairing() = pairingHandler.requestPairing()
+    fun requestPairing(janusPairCode: String? = null) = pairingHandler.requestPairing(janusPairCode)
 
     fun unpair() = pairingHandler.unpair()
 
