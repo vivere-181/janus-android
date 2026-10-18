@@ -16,8 +16,8 @@ class LoopbackLinkProvider : BaseLinkProvider {
         this.context = context
     }
 
-    override fun getName(): String = "LoopbackLinkProvider"
-    override fun getPriority(): Int = 0
+    override val name: String get() = "LoopbackLinkProvider"
+    override val priority: Int get() = 0
 
     override fun onStart() {
         onNetworkChange(null)
