@@ -251,9 +251,13 @@ class CompositeReceiveFileJob internal constructor(
     private fun receiveFile(input: InputStream?, output: OutputStream): Long {
         val data = ByteArray(4096)
         var received: Long = 0
+        // ge.connect: stop once the announced size is in, rather than waiting for the sender to close the stream (a
+        // sender that waits for us to close first would otherwise stall until the read timeout and fail the file).
+        val expected = currentNetworkPacket?.payloadSize ?: -1L
 
         while (true) {
-            val count = input!!.read(data)
+            if (expected > 0 && received >= expected) break
+            val count = input!!.read(data, 0, if (expected > 0) minOf(data.size.toLong(), expected - received).toInt() else data.size)
             if (count < 0 || isCancelled) break
 
             received += count
