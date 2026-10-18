@@ -59,7 +59,7 @@ Janus for Mac shows a QR code (on its welcome screen and in Add Device). Scan it
 which opens Janus. The phone connects straight to the Mac, checks the Mac's certificate against the code, and pairs
 with the code's one-time key, so there's nothing to compare. Both devices need to be on the same network for this.
 
-You can also pair over Wi-Fi from either side, without a code: both show the same verification code to compare.
+You can also pair over Wi-Fi from either side without the QR code; then both show a verification code to compare.
 The companion messages are documented in
 [PROTOCOL.md](https://github.com/vivere-181/janus-mac/blob/main/docs/PROTOCOL.md) in the Mac repository.
 
