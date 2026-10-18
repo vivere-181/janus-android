@@ -44,7 +44,11 @@ echo "Built $out ($(du -h "$out" | cut -f1)), committed and tagged v$version."
 
 if $publish; then
   git push -q origin HEAD "v$version"
-  gh release create "v$version" "$out" --title "Janus $version" ${notes:+--notes-file "$notes"} ${notes:---generate-notes}
+  if [ -n "$notes" ]; then
+    gh release create "v$version" "$out" --title "Janus $version" --notes-file "$notes"
+  else
+    gh release create "v$version" "$out" --title "Janus $version" --generate-notes
+  fi
 else
   echo "To publish: git push origin HEAD v$version && gh release create v$version $out --title \"Janus $version\" --generate-notes"
 fi
