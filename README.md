@@ -7,6 +7,8 @@ Janus Cloud, from anywhere. It also turns your phone into the remote for an Andr
 
 Janus is named after the Roman god of doorways, who looks both ways: one app, two sides.
 
+**[Download the latest release](https://github.com/vivere-181/janus-android/releases/latest)** (an APK for phones and Android TVs).
+
 ## Based on KDE Connect
 
 Janus is a fork of [KDE Connect for Android](https://invent.kde.org/network/kdeconnect-android) and speaks the KDE
