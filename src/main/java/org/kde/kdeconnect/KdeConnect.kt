@@ -26,7 +26,6 @@ import org.kde.kdeconnect.plugins.Plugin
 import org.kde.kdeconnect.plugins.PluginFactory
 import org.kde.kdeconnect.ui.ThemeUtil
 import org.kde.kdeconnect_tp.BuildConfig
-import org.slf4j.impl.HandroidLoggerAdapter
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.util.Date
@@ -50,7 +49,6 @@ class KdeConnect : Application() {
     override fun onCreate() {
         super.onCreate()
         _instance = this
-        setupSL4JLogging()
         Log.d("KdeConnect/Application", "onCreate")
         ThemeUtil.setUserPreferredTheme(this)
         DeviceHelper.initializeDeviceId(this)
@@ -110,12 +108,6 @@ class KdeConnect : Application() {
             StrictMode.setVmPolicy(vmPolicyBuilder.penaltyLog().build())
             StrictMode.setThreadPolicy(threadPolicyBuilder.penaltyLog().build())
         }
-    }
-
-    private fun setupSL4JLogging() {
-        HandroidLoggerAdapter.DEBUG = BuildConfig.DEBUG
-        HandroidLoggerAdapter.ANDROID_API_LEVEL = Build.VERSION.SDK_INT
-        HandroidLoggerAdapter.APP_NAME = "KDEConnect"
     }
 
     override fun onTerminate() {
