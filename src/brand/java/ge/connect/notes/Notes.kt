@@ -196,15 +196,18 @@ object NotesStore {
     }
 
     /**
-     * A note from [peer] (with the `base` it was edited from). Takes it, or resolves a conflict: the later
+     * A note from [peer] (with the `base` it was edited from). Takes it when ours is the version [peer] had (`base`,
+     * or the rev it last sent or acked), or resolves a conflict: the later
      * (`modified`, then `rev`) stays under the id, the other is kept as a copy with an id both sides derive the same way.
      * @return whether anything changed here
      */
     fun receive(peer: String, incoming: Note, base: String?): Boolean = synchronized(lock) {
         val local = notes[incoming.id]
-        acked.getOrPut(peer) { HashMap() }[incoming.id] = incoming.rev
+        val peerHad = acked.getOrPut(peer) { HashMap() }.put(incoming.id, incoming.rev)
         val changed = when {
-            local == null || local.rev == base -> { notes[incoming.id] = incoming; true }
+            // Ours unchanged since this peer had it (it sent it, or acked it): theirs is newer, whatever `base` says.
+            // `base` lags while acks are on their way (pushes ~1 s apart while typing), which made copies of every step.
+            local == null || local.rev == base || local.rev == peerHad -> { notes[incoming.id] = incoming; true }
             local.rev == incoming.rev -> false
             else -> {
                 val incomingWins = compareValuesBy(incoming, local, { it.modified }, { it.rev }) > 0
