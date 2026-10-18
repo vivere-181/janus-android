@@ -20,6 +20,8 @@ Janus is not affiliated with or endorsed by KDE. "KDE" and "KDE Connect" are tra
 
 ## Features
 
+- **Pairing by QR code**: scan the code Janus for Mac shows; no codes to compare. A simple first run: allow the basics
+  in one go, then turn on the features you want, each asking only for what it needs.
 - **Your devices and other people's**: your own devices get everything; someone else's device only gets
   sharing, with Accept / Decline for files.
 - Notifications (with replies and actions), calls (with a live call card on the Mac), SMS, contacts.
@@ -38,15 +40,27 @@ Janus is not affiliated with or endorsed by KDE. "KDE" and "KDE Connect" are tra
 
 ## Install
 
-Janus needs Android 7.0 or newer. Download `Janus-<version>.apk` from [Releases](https://github.com/vivere-181/janus-android/releases) on the phone
-(or the TV) and open it. Android asks once to allow installs from your browser or file manager; allow it, then
-install. Updates install the same way, over the previous version, keeping your pairings. Every release is signed
-with the same key.
+Janus needs Android 7.0 or newer.
+
+1. On the phone (or the TV), download `Janus-<version>.apk` from [Releases](https://github.com/vivere-181/janus-android/releases) and open it.
+2. Android asks once to allow installs from your browser or file manager; allow it, then tap **Install**. Android may
+   warn that the app isn't from the Play Store; that's expected for an app installed from a file.
+3. Open Janus and scan the code Janus for Mac shows.
+
+On Android 13 and later, if the notification-sync switch is greyed out, open App info → ⋮ → **Allow restricted
+settings**, then try again (Android asks this of apps installed from a file).
+
+Updates install the same way, over the previous version, keeping your pairings. Every release is signed with the
+same key.
 
 ## How it pairs with the Mac
 
-Install Janus on the phone and Janus for Mac on the Mac, put both on the same network and pair from either side
-(both show the same verification code). The companion messages are documented in
+Janus for Mac shows a QR code (on its welcome screen and in Add Device). Scan it in Janus, or with the phone's camera,
+which opens Janus. The phone connects straight to the Mac, checks the Mac's certificate against the code, and pairs
+with the code's one-time key, so there's nothing to compare. Both devices need to be on the same network for this.
+
+You can also pair over Wi-Fi from either side, without a code: both show the same verification code to compare.
+The companion messages are documented in
 [PROTOCOL.md](https://github.com/vivere-181/janus-mac/blob/main/docs/PROTOCOL.md) in the Mac repository.
 
 ## Building
@@ -67,7 +81,7 @@ Release builds are signed with your own key: create `keystore.properties` (not i
 Janus is free software under the **GNU General Public License v3.0** ([LICENSE](LICENSE)). KDE Connect's files keep
 their original licence headers (GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL); see `LICENSES/`.
 Bundled assets: Google Sans Flex (SIL Open Font License, `src/brand/OFL-GoogleSansFlex.txt`), Material Symbols
-(Apache 2.0). The Janus icon sources are in `icon/`. The AirPlay receiver for Android TV (`src/airplay`) is
+(Apache 2.0). The Janus icon sources are in `icon/`. MMS uses android-smsmms (Apache 2.0, `libs/android-smsmms`). The AirPlay receiver for Android TV (`src/airplay`) is
 UxPlay via [android-airplay-server](https://github.com/jqssun/android-airplay-server) (GPL-3.0), with libplist,
 OpenSSL, Oboe and FFmpeg's ALAC decoder under their own licences; see `src/airplay/README.md`.
 
