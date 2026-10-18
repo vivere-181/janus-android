@@ -38,7 +38,7 @@ fi
 mkdir -p build/release
 out="build/release/Janus-$version.apk"
 cp "$apk" "$out"
-git commit -qam "Janus $version"
+git diff --quiet || git commit -qam "Janus $version" # (nothing to commit when the version was already set)
 git tag -a "v$version" -m "Janus $version"
 echo "Built $out ($(du -h "$out" | cut -f1)), committed and tagged v$version."
 
